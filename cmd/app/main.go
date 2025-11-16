@@ -1,0 +1,21 @@
+package main
+
+import (
+    "log"
+    "net/http"
+    "os"
+
+    "example.com/starterkit/server"
+)
+
+func main() {
+    addr := ":8080"
+    if a := os.Getenv("PORT"); a != "" {
+        addr = ":" + a
+    }
+    mux := server.NewRouter()
+    log.Printf("listening on %s", addr)
+    if err := http.ListenAndServe(addr, mux); err != nil {
+        log.Fatal(err)
+    }
+}

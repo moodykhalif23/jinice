@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Starterkit</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 2rem; }
+    button { margin-right: .5rem; padding: .5rem 1rem; }
+    pre { background:#214e7a; padding:1rem; border-radius:6px; }
+  </style>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <h1>Starterkit</h1>
+  <p>UI to test the backend endpoints.</p>
+
+  <div>
+    <button id="btn-health">Check /health</button>
+    <button id="btn-hello">Call /hello</button>
+  </div>
+
+  <h3>Result</h3>
+  <pre id="output">(no calls yet)</pre>
+
+  <hr />
+  <p>Notes: The frontend calls <code>http://localhost:8080</code>. Make sure the Go server is running.</p>
+</body>
+</html>
