@@ -78,12 +78,21 @@
       font-weight: bold;
     }
     .business-card {
+      display: block;
       background-color: white;
       border: 1px solid #ddd;
       border-radius: 8px;
       padding: 16px;
       margin: 12px 0;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: all 0.2s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+    .business-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      border-color: #007bff;
     }
     .business-card h3 {
       margin: 0 0 8px 0;

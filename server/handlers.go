@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -262,6 +264,7 @@ func NewRouter() http.Handler {
 	// API routes
 	mux.HandleFunc("/health", corsMiddleware(healthHandler))
 	mux.HandleFunc("/businesses", corsMiddleware(businessesRouter))
+	mux.HandleFunc("/business/", corsMiddleware(getBusinessByIDHandler))
 	mux.HandleFunc("/stats", corsMiddleware(statsHandler))
 	mux.HandleFunc("/events", corsMiddleware(eventsHandler))
 
@@ -526,6 +529,53 @@ func deleteBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	logEvent("business_deleted", "Business "+business.Name+" removed from directory", business)
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func getBusinessByIDHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Extract ID from URL path - trim "/business/"
+	idStr := strings.TrimPrefix(r.URL.Path, "/business/")
+	if idStr == r.URL.Path { // Path didn't contain /business/
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "business ID required"})
+		return
+	}
+
+	if idStr == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "business ID required"})
+		return
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid business ID"})
+		return
+	}
+
+	var business Business
+	err = db.QueryRow("SELECT id, name, category, description, phone, email, address, rating, created_at, owner_id FROM businesses WHERE id = ?", id).
+		Scan(&business.ID, &business.Name, &business.Category, &business.Description, &business.Phone, &business.Email, &business.Address, &business.Rating, &business.CreatedAt, &business.OwnerID)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "business not found"})
+			return
+		}
+		log.Printf("Error fetching business: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(business)
 }
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {

@@ -25,8 +25,9 @@ function filterBusinesses() {
 
   if (filteredBusinesses.length > 0) {
     filteredBusinesses.forEach(business => {
-      const card = document.createElement('div');
+      const card = document.createElement('a');
       card.className = 'business-card';
+      card.href = `business-detail.html?id=${business.id}`;
       const rating = business.rating ? `${business.rating}★` : 'No rating';
       card.innerHTML = `
         <h3>${business.name}</h3>
@@ -34,8 +35,8 @@ function filterBusinesses() {
         <div class="rating">${rating}</div>
         <div class="description">${business.description}</div>
         <div class="contact-info">
-          <div><strong>Phone:</strong> <a href="tel:${business.phone}">${business.phone}</a></div>
-          <div><strong>Email:</strong> <a href="mailto:${business.email}">${business.email}</a></div>
+          <div><strong>Phone:</strong> <span>${business.phone || 'N/A'}</span></div>
+          <div><strong>Email:</strong> <span>${business.email || 'N/A'}</span></div>
           <div><strong>Address:</strong> ${business.address}</div>
         </div>
       `;
