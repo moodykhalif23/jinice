@@ -4,26 +4,44 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Starterkit</title>
-  <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 2rem; }
-    button { margin-right: .5rem; padding: .5rem 1rem; }
-    pre { background:#b7c3cf; padding:1rem; border-radius:6px; }
-  </style>
   <script defer src="./app.js"></script>
 </head>
 <body>
   <h1>Starterkit</h1>
-  <p>UI to test the backend endpoints.</p>
+  <p>Test your backend with these endpoints!</p>
 
-  <div>
-    <button id="btn-health">Check /health</button>
-    <button id="btn-hello">Call /hello</button>
-  </div>
-
+  <h2>Basic Endpoints</h2>
+  <button id="btn-health">Check /health</button>
+  <button id="btn-hello">Call /hello</button>
   <h3>Result</h3>
-  <pre id="output">(no calls yet)</pre>
+  <pre id="output-basic">(no calls yet)</pre>
 
-  <hr />
-  <p>Notes: The frontend calls <code>http://localhost:8080</code>. Make sure the Go server is running.</p>
+  <h2>Server Time</h2>
+  <button id="btn-time">Get /time</button>
+  <pre id="output-time">(no calls yet)</pre>
+
+  <h2>Echo Service</h2>
+  <label for="echo-input">JSON Input:</label>
+  <input type="text" id="echo-input" placeholder='{"message": "Hello", "value": 42}' value='{"message": "Hello, Backend!", "value": 42}'>
+  <button id="btn-echo">Send Echo</button>
+  <pre id="output-echo">(no calls yet)</pre>
+
+  <h2>Server Statistics</h2>
+  <button id="btn-stats">Get /stats</button>
+  <div id="stats-grid">
+    <div>
+      <p>Total Requests: <strong id="stat-requests">-</strong></p>
+    </div>
+    <div>
+      <p>Uptime (seconds): <strong id="stat-uptime">-</strong></p>
+    </div>
+    <div>
+      <p>Start Time: <strong id="stat-start">-</strong></p>
+    </div>
+  </div>
+  <pre id="output-stats">(no calls yet)</pre>
+
+  <hr>
+  <p>Note: The frontend calls <code>http://localhost:8080</code>. Make sure the Go server is running.</p>
 </body>
 </html>
