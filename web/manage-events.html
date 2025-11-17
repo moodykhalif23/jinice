@@ -37,32 +37,32 @@
   <div class="container">
     <div class="header-with-auth">
       <div>
-        <h1 style="margin: 0; padding-bottom: 10px; border-bottom: 2px solid #333;">Manage Your Events</h1>
+        <h1 class="page-title-small">Manage Your Events</h1>
       </div>
       <div class="auth-buttons">
-        <button id="logout-nav" class="danger" style="display: none;">Logout</button>
+        <button id="logout-nav" class="danger hide">Logout</button>
       </div>
     </div>
-  
+
     <p id="user-status">Create and manage events (standalone or linked to your businesses)</p>
 
     <div class="nav">
       <a href="user.html">Browse Businesses</a>
       <a href="events.html">Browse Events</a>
-      <a href="business-owner.html">Business Portal</a>
+      <a href="auth.html">Portal Access</a>
       <a href="manage-events.html" class="active">Manage Events</a>
       <a href="index.html">Home</a>
     </div>
 
     <!-- Auth Required Message -->
-    <div id="auth-required" class="auth-required" style="display: none;">
+    <div id="auth-required" class="auth-required hide">
       <h2>Authentication Required</h2>
       <p>Please log in to manage your events.</p>
-      <button onclick="window.location.href='business-owner.html'" class="success">Go to Login</button>
+      <button onclick="window.location.href='auth.html'" class="success">Go to Login</button>
     </div>
 
     <!-- Main Dashboard (shown when logged in) -->
-    <div id="dashboard" style="display: none;">
+    <div id="dashboard" class="hide">
       <h2>Your Events</h2>
       <button id="btn-refresh-events" class="success">Refresh Events</button>
       <div id="events-list" class="events-grid"></div>
@@ -70,8 +70,8 @@
       <hr>
 
       <div class="container-form">
-        <h2 style="text-align: center;">Create New Event</h2>
-        
+        <h2 class="text-center">Create New Event</h2>
+
         <label for="event-business">Link to Business (Optional):</label>
         <select id="event-business">
           <option value="">Loading businesses...</option>
@@ -103,7 +103,7 @@
         <label for="event-price">Price ($):</label>
         <input type="number" id="event-price" placeholder="0.00" min="0" step="0.01">
 
-        <button id="btn-create-event" class="success" style="width: 100%;">Create Event</button>
+        <button id="btn-create-event" class="success btn-full-width">Create Event</button>
       </div>
     </div>
 

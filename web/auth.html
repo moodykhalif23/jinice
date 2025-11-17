@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Authentication - JiNice</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="./auth.js"></script>
+</head>
+<body>
+  <a href="index.html" class="back-to-home">
+    ← Back to Home
+  </a>
+
+  <div class="auth-page">
+    <div class="auth-container">
+      <div class="auth-header">
+        <h1>Welcome to JiNice</h1>
+        <p>Join our community platform</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login">Sign In</button>
+        <button class="auth-tab" id="tab-register">Sign Up</button>
+      </div>
+
+      <!-- Login Form -->
+      <form class="auth-form active" id="login-form">
+        <input type="email" id="login-email" placeholder="Email address" required>
+        <input type="password" id="login-password" placeholder="Password" required>
+        <button type="submit" id="login-btn">Sign In</button>
+        <button type="button" class="link-btn" id="switch-to-register">Create account</button>
+      </form>
+
+      <!-- Register Form -->
+      <form class="auth-form" id="register-form">
+        <div class="user-type-selector">
+          <div class="user-type-title">I want to:</div>
+          <div class="user-type-options">
+            <div class="user-type-option selected" data-type="business_owner">
+              <div class="label">Business Owner</div>
+            </div>
+            <div class="user-type-option" data-type="event_owner">
+              <div class="label">Event Organizer</div>
+            </div>
+          </div>
+        </div>
+
+        <input type="text" id="register-name" placeholder="Full name" required>
+        <input type="email" id="register-email" placeholder="Email address" required>
+        <input type="password" id="register-password" placeholder="Create password" required minlength="6">
+        <div id="organization-field" class="hide">
+          <input type="text" id="register-organization" placeholder="Organization name">
+        </div>
+        <button type="submit" id="register-btn">Create Account</button>
+        <button type="button" class="link-btn" id="switch-to-login">Sign in instead</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

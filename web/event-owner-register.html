@@ -33,12 +33,12 @@
 </head>
 <body>
   <div class="container-form">
-    <h1 style="text-align: center;">Event Owner Registration</h1>
-    <p style="text-align: center;">Create events and reach your audience on JiNice</p>
+    <h1 class="text-center">Event Owner Registration</h1>
+    <p class="text-center">Create events and reach your audience on JiNice</p>
 
-    <div class="nav" style="justify-content: center;">
+    <div class="nav nav-centered">
       <a href="index.html">Home</a>
-      <a href="business-owner.html">Business Owner Login</a>
+      <a href="auth.html">Portal Access</a>
     </div>
 
     <div class="info-box">
@@ -52,32 +52,13 @@
     </div>
 
     <div class="form-container">
-      <h2 style="margin-top: 0;">Register as Event Owner</h2>
-      <form id="register-form">
-        <label for="register-name">Full Name: *</label>
-        <input type="text" id="register-name" placeholder="Enter your full name" required>
-
-        <label for="register-email">Email: *</label>
-        <input type="email" id="register-email" placeholder="Enter your email" required>
-
-        <label for="register-password">Password: *</label>
-        <input type="password" id="register-password" placeholder="Enter your password" required>
-
-        <label for="register-organization">Organization Name:</label>
-        <input type="text" id="register-organization" placeholder="Organization or group name (optional)">
-
-        <label for="register-phone">Phone:</label>
-        <input type="tel" id="register-phone" placeholder="Contact phone number (optional)">
-
-        <button type="submit" style="width: 100%;">Register as Event Owner</button>
-        <button type="button" class="secondary" style="width: 100%; margin-top: 10px;" onclick="window.location.href='business-owner.html'">
-          Already have an account? Login
-        </button>
-      </form>
+      <h2 class="margin-top-0">Event Owner Registration</h2>
+      <p>The unified authentication system now handles both Business Owners and Event Organizers.</p>
+      <button onclick="window.location.href='auth.html'" class="btn-full-width">Go to Unified Authentication</button>
     </div>
 
     <hr>
-    <p style="text-align: center;">Jinice (copyright 2026)</p>
+    <p class="text-center">Jinice (copyright 2026)</p>
   </div>
 </body>
 </html>
