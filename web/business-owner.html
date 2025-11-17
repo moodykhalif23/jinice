@@ -190,18 +190,23 @@
   <script defer src="./business-owner.js"></script>
 </head>
 <body>
-  <h1>Business Owner Portal</h1>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+    <div>
+      <h1 style="margin: 0; padding-bottom: 10px; border-bottom: 2px solid #333;">Business Owner Portal</h1>
+    </div>
+    <div id="auth-buttons" style="display: flex; gap: 10px;">
+      <button id="show-login-nav" class="secondary" style="display: inline-block;">Login</button>
+      <button id="show-register-nav" class="secondary" style="display: inline-block;">Sign Up</button>
+      <button id="logout-nav" class="danger" style="display: none;">Logout</button>
+    </div>
+  </div>
+  
   <p id="user-status">Manage your business listings and monitor performance</p>
 
   <div class="nav">
     <a href="user.html">Business Directory</a>
     <a href="business-owner.html" class="active">Business Owner Portal</a>
     <a href="index.html">Home</a>
-    <div id="auth-buttons" style="margin-left: auto; display: flex; gap: 10px;">
-      <button id="show-login-nav" class="secondary" style="display: inline-block;">Login</button>
-      <button id="show-register-nav" class="secondary" style="display: inline-block;">Sign Up</button>
-      <button id="logout-nav" class="danger" style="display: none;">Logout</button>
-    </div>
   </div>
 
   <!-- Login Form (shown when not logged in) -->
