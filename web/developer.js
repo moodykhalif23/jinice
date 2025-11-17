@@ -5,11 +5,14 @@ function formatJson(obj) {
 }
 
 function callApi(endpoint) {
-  const output = document.getElementById('output');
+  const outputId = 'output-' + endpoint;
+  const output = document.getElementById(outputId);
+  if (!output) return;
+  
   output.textContent = `Calling ${endpoint}...`;
+  output.classList.remove('output-hidden');
 
   let url = base + '/' + endpoint;
-  let options = {};
 
   switch(endpoint) {
     case 'health':
