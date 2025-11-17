@@ -1,40 +1,52 @@
 const base = 'http://localhost:8080';
+let allBusinesses = [];
 
 function loadBusinesses() {
   fetch(base + '/businesses')
     .then(res => res.json())
     .then(businesses => {
-      const list = document.getElementById('businesses-list');
-      list.innerHTML = '';
-      if (Array.isArray(businesses) && businesses.length > 0) {
-        businesses.forEach(business => {
-          const card = document.createElement('div');
-          card.className = 'business-card';
-          const rating = business.rating ? `${business.rating}★` : 'No rating';
-          card.innerHTML = `
-            <h3>${business.name}</h3>
-            <span class="category">${business.category}</span>
-            <div class="rating">${rating}</div>
-            <div class="description">${business.description}</div>
-            <div class="contact-info">
-              <div><strong>Phone:</strong> <a href="tel:${business.phone}">${business.phone}</a></div>
-              <div><strong>Email:</strong> <a href="mailto:${business.email}">${business.email}</a></div>
-              <div><strong>Address:</strong> ${business.address}</div>
-            </div>
-            <div>
-              <button onclick="deleteBusiness(${business.id})" class="danger">Remove Listing</button>
-            </div>
-          `;
-          list.appendChild(card);
-        });
-      } else {
-        list.innerHTML = '<div class="no-businesses">No businesses in directory yet. Be the first to add one!</div>';
-      }
+      allBusinesses = Array.isArray(businesses) ? businesses : [];
+      filterBusinesses();
     })
     .catch(err => {
       console.error('Error loading businesses:', err);
       document.getElementById('businesses-list').innerHTML = '<p>Error loading businesses</p>';
     });
+}
+
+function filterBusinesses() {
+  const filterValue = document.getElementById('category-filter').value;
+  const list = document.getElementById('businesses-list');
+  list.innerHTML = '';
+
+  const filteredBusinesses = filterValue
+    ? allBusinesses.filter(business => business.category === filterValue)
+    : allBusinesses;
+
+  if (filteredBusinesses.length > 0) {
+    filteredBusinesses.forEach(business => {
+      const card = document.createElement('div');
+      card.className = 'business-card';
+      const rating = business.rating ? `${business.rating}★` : 'No rating';
+      card.innerHTML = `
+        <h3>${business.name}</h3>
+        <span class="category">${business.category}</span>
+        <div class="rating">${rating}</div>
+        <div class="description">${business.description}</div>
+        <div class="contact-info">
+          <div><strong>Phone:</strong> <a href="tel:${business.phone}">${business.phone}</a></div>
+          <div><strong>Email:</strong> <a href="mailto:${business.email}">${business.email}</a></div>
+          <div><strong>Address:</strong> ${business.address}</div>
+        </div>
+      `;
+      list.appendChild(card);
+    });
+  } else {
+    const message = filterValue
+      ? `No businesses found in "${filterValue}" category.`
+      : 'No businesses in directory yet. Be the first to add one!';
+    list.innerHTML = `<div class="no-businesses">${message}</div>`;
+  }
 }
 
 function deleteBusiness(id) {
@@ -62,6 +74,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const refreshBtn = document.getElementById('btn-refresh-businesses');
   if (refreshBtn) {
     refreshBtn.addEventListener('click', loadBusinesses);
+  }
+
+  // Category filter
+  const categoryFilter = document.getElementById('category-filter');
+  if (categoryFilter) {
+    categoryFilter.addEventListener('change', filterBusinesses);
   }
 
   // Add Business
