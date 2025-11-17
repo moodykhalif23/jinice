@@ -15,7 +15,7 @@ function loadTodos() {
     .then(todos => {
       const list = document.getElementById('todos-list');
       list.innerHTML = '';
-      if (todos && todos.length > 0) {
+      if (Array.isArray(todos) && todos.length > 0) {
         todos.forEach(todo => {
           const item = document.createElement('div');
           item.className = 'item';
@@ -32,7 +32,10 @@ function loadTodos() {
         list.innerHTML = '<p>No todos yet. Add one above!</p>';
       }
     })
-    .catch(err => console.error(err));
+    .catch(err => {
+      console.error('Error loading todos:', err);
+      document.getElementById('todos-list').innerHTML = '<p>Error loading todos</p>';
+    });
 }
 
 function loadUsers() {
@@ -41,7 +44,7 @@ function loadUsers() {
     .then(users => {
       const list = document.getElementById('users-list');
       list.innerHTML = '';
-      if (users && users.length > 0) {
+      if (Array.isArray(users) && users.length > 0) {
         users.forEach(user => {
           const item = document.createElement('div');
           item.className = 'item';
@@ -54,7 +57,10 @@ function loadUsers() {
         list.innerHTML = '<p>No users yet. Add one above!</p>';
       }
     })
-    .catch(err => console.error(err));
+    .catch(err => {
+      console.error('Error loading users:', err);
+      document.getElementById('users-list').innerHTML = '<p>Error loading users</p>';
+    });
 }
 
 function toggleTodo(id, completed) {
@@ -63,8 +69,10 @@ function toggleTodo(id, completed) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id, title: '', completed })
   })
-    .then(() => loadTodos())
-    .catch(err => console.error(err));
+    .then(res => {
+      if (res.ok) loadTodos();
+    })
+    .catch(err => console.error('Error toggling todo:', err));
 }
 
 function deleteTodo(id) {
@@ -73,96 +81,135 @@ function deleteTodo(id) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id })
   })
-    .then(() => loadTodos())
-    .catch(err => console.error(err));
+    .then(res => {
+      if (res.ok) loadTodos();
+    })
+    .catch(err => console.error('Error deleting todo:', err));
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadTodos();
-  loadUsers();
+  // Load initial data
+  setTimeout(() => {
+    loadTodos();
+    loadUsers();
+  }, 500);
 
   // Add Todo
-  document.getElementById('btn-add-todo').addEventListener('click', () => {
-    const input = document.getElementById('todo-input');
-    const title = input.value.trim();
-    if (!title) return;
-    
-    fetch(base + '/todos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title })
-    })
-      .then(() => {
-        input.value = '';
-        loadTodos();
+  const addTodoBtn = document.getElementById('btn-add-todo');
+  if (addTodoBtn) {
+    addTodoBtn.addEventListener('click', () => {
+      const input = document.getElementById('todo-input');
+      const title = input.value.trim();
+      if (!title) {
+        alert('Please enter a todo');
+        return;
+      }
+      
+      fetch(base + '/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
       })
-      .catch(err => console.error(err));
-  });
+        .then(res => res.json())
+        .then(data => {
+          console.log('Todo created:', data);
+          input.value = '';
+          loadTodos();
+        })
+        .catch(err => {
+          console.error('Error creating todo:', err);
+          alert('Error creating todo: ' + err);
+        });
+    });
+  }
 
   // Add User
-  document.getElementById('btn-add-user').addEventListener('click', () => {
-    const name = document.getElementById('user-name').value.trim();
-    const email = document.getElementById('user-email').value.trim();
-    if (!name || !email) return;
-    
-    fetch(base + '/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email })
-    })
-      .then(() => {
-        document.getElementById('user-name').value = '';
-        document.getElementById('user-email').value = '';
-        loadUsers();
+  const addUserBtn = document.getElementById('btn-add-user');
+  if (addUserBtn) {
+    addUserBtn.addEventListener('click', () => {
+      const name = document.getElementById('user-name').value.trim();
+      const email = document.getElementById('user-email').value.trim();
+      if (!name || !email) {
+        alert('Please enter name and email');
+        return;
+      }
+      
+      fetch(base + '/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email })
       })
-      .catch(err => console.error(err));
-  });
+        .then(res => res.json())
+        .then(data => {
+          console.log('User created:', data);
+          document.getElementById('user-name').value = '';
+          document.getElementById('user-email').value = '';
+          loadUsers();
+        })
+        .catch(err => {
+          console.error('Error creating user:', err);
+          alert('Error creating user: ' + err);
+        });
+    });
+  }
 
   // Health Check
-  document.getElementById('btn-health').addEventListener('click', async () => {
-    out('output-dev', 'calling /health...');
-    try {
-      const res = await fetch(base + '/health');
-      const txt = await res.text();
-      out('output-dev', `status: ${res.status}\n\n${txt}`);
-    } catch (err) {
-      out('output-dev', 'error: ' + err);
-    }
-  });
+  const healthBtn = document.getElementById('btn-health');
+  if (healthBtn) {
+    healthBtn.addEventListener('click', async () => {
+      out('output-dev', 'calling /health...');
+      try {
+        const res = await fetch(base + '/health');
+        const txt = await res.text();
+        out('output-dev', `status: ${res.status}\n\n${txt}`);
+      } catch (err) {
+        out('output-dev', 'error: ' + err);
+      }
+    });
+  }
 
   // Hello Endpoint
-  document.getElementById('btn-hello').addEventListener('click', async () => {
-    out('output-dev', 'calling /hello...');
-    try {
-      const res = await fetch(base + '/hello');
-      const json = await res.json();
-      out('output-dev', `status: ${res.status}\n\n` + formatJson(json));
-    } catch (err) {
-      out('output-dev', 'error: ' + err);
-    }
-  });
+  const helloBtn = document.getElementById('btn-hello');
+  if (helloBtn) {
+    helloBtn.addEventListener('click', async () => {
+      out('output-dev', 'calling /hello...');
+      try {
+        const res = await fetch(base + '/hello');
+        const json = await res.json();
+        out('output-dev', `status: ${res.status}\n\n` + formatJson(json));
+      } catch (err) {
+        out('output-dev', 'error: ' + err);
+      }
+    });
+  }
 
   // Time Endpoint
-  document.getElementById('btn-time').addEventListener('click', async () => {
-    out('output-dev', 'calling /time...');
-    try {
-      const res = await fetch(base + '/time');
-      const json = await res.json();
-      out('output-dev', `status: ${res.status}\n\n` + formatJson(json));
-    } catch (err) {
-      out('output-dev', 'error: ' + err);
-    }
-  });
+  const timeBtn = document.getElementById('btn-time');
+  if (timeBtn) {
+    timeBtn.addEventListener('click', async () => {
+      out('output-dev', 'calling /time...');
+      try {
+        const res = await fetch(base + '/time');
+        const json = await res.json();
+        out('output-dev', `status: ${res.status}\n\n` + formatJson(json));
+      } catch (err) {
+        out('output-dev', 'error: ' + err);
+      }
+    });
+  }
 
   // Stats Endpoint
-  document.getElementById('btn-stats').addEventListener('click', async () => {
-    out('output-dev', 'calling /stats...');
-    try {
-      const res = await fetch(base + '/stats');
-      const json = await res.json();
-      out('output-dev', `status: ${res.status}\n\n` + formatJson(json));
-    } catch (err) {
-      out('output-dev', 'error: ' + err);
-    }
-  });
+  const statsBtn = document.getElementById('btn-stats');
+  if (statsBtn) {
+    statsBtn.addEventListener('click', async () => {
+      out('output-dev', 'calling /stats...');
+      try {
+        const res = await fetch(base + '/stats');
+        const json = await res.json();
+        out('output-dev', `status: ${res.status}\n\n` + formatJson(json));
+      } catch (err) {
+        out('output-dev', 'error: ' + err);
+      }
+    });
+  }
 });

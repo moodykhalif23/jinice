@@ -148,7 +148,7 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
-func getTodosHandler(w http.ResponseWriter, r *http.Request) {
+func getTodosHandler(w http.ResponseWriter, _ *http.Request) {
 	todosMutex.Lock()
 	todoList := make([]Todo, 0, len(todos))
 	for _, todo := range todos {
@@ -243,7 +243,7 @@ func deleteTodoHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func getUsersHandler(w http.ResponseWriter, r *http.Request) {
+func getUsersHandler(w http.ResponseWriter, _ *http.Request) {
 	usersMutex.Lock()
 	userList := make([]User, 0, len(users))
 	for _, user := range users {
