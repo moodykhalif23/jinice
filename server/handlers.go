@@ -213,6 +213,18 @@ type BusinessEvent struct {
 	CreatedAt   time.Time `json:"created_at"`
 }
 
+type Booking struct {
+	ID        int       `json:"id"`
+	EventID   int       `json:"event_id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Phone     string    `json:"phone"`
+	Tickets   int       `json:"tickets"`
+	Notes     string    `json:"notes"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 func InitDB() error {
 	var err error
 	host := os.Getenv("DB_HOST")
@@ -384,6 +396,28 @@ func createTables() error {
 		return err
 	}
 
+	// Bookings table
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS bookings (
+			id INT AUTO_INCREMENT PRIMARY KEY,
+			event_id INT NOT NULL,
+			name VARCHAR(255) NOT NULL,
+			email VARCHAR(255) NOT NULL,
+			phone VARCHAR(50),
+			tickets INT NOT NULL DEFAULT 1,
+			notes TEXT,
+			status ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'pending',
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+			INDEX idx_bookings_event_id (event_id),
+			INDEX idx_bookings_email (email),
+			INDEX idx_bookings_status (status)
+		)
+	`)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -513,6 +547,9 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("/business-events", corsMiddleware(businessEventsRouter))
 	mux.HandleFunc("/event/", corsMiddleware(getEventByIDHandler))
 	mux.HandleFunc("/my-events", corsMiddleware(eventOwnerOnly(getMyEventsHandler)))
+
+	// Booking routes
+	mux.HandleFunc("/bookings", corsMiddleware(bookingsRouter))
 
 	// Global stats (no auth required)
 	mux.HandleFunc("/stats", corsMiddleware(statsHandler))
@@ -1701,4 +1738,273 @@ func getMyEventsHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(events)
+}
+
+// Booking Handlers
+
+func bookingsRouter(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		// GET requires auth to view bookings
+		authMiddleware(getBookingsHandler)(w, r)
+	case http.MethodPost:
+		// POST is public - anyone can book
+		createBookingHandler(w, r)
+	case http.MethodPut:
+		// PUT requires auth to update booking status
+		authMiddleware(updateBookingHandler)(w, r)
+	case http.MethodDelete:
+		// DELETE requires auth
+		authMiddleware(deleteBookingHandler)(w, r)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func createBookingHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		EventID int    `json:"event_id"`
+		Name    string `json:"name"`
+		Email   string `json:"email"`
+		Phone   string `json:"phone"`
+		Tickets int    `json:"tickets"`
+		Notes   string `json:"notes"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid request"})
+		return
+	}
+
+	if req.EventID == 0 || req.Name == "" || req.Email == "" || req.Tickets < 1 {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "event_id, name, email, and tickets are required"})
+		return
+	}
+
+	// Verify event exists
+	var eventID int
+	err := db.QueryRow("SELECT id FROM events WHERE id = ?", req.EventID).Scan(&eventID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "event not found"})
+			return
+		}
+		log.Printf("Error checking event: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+		return
+	}
+
+	result, err := db.Exec(`
+		INSERT INTO bookings (event_id, name, email, phone, tickets, notes, status)
+		VALUES (?, ?, ?, ?, ?, ?, 'pending')
+	`, req.EventID, req.Name, req.Email, req.Phone, req.Tickets, req.Notes)
+
+	if err != nil {
+		log.Printf("Error creating booking: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to create booking"})
+		return
+	}
+
+	id, _ := result.LastInsertId()
+	booking := Booking{
+		ID:        int(id),
+		EventID:   req.EventID,
+		Name:      req.Name,
+		Email:     req.Email,
+		Phone:     req.Phone,
+		Tickets:   req.Tickets,
+		Notes:     req.Notes,
+		Status:    "pending",
+		CreatedAt: time.Now(),
+	}
+
+	logEvent("booking_created", fmt.Sprintf("Booking created for event %d by %s", req.EventID, req.Name), booking)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"booking": booking,
+		"message": "Booking created successfully",
+	})
+}
+
+func getBookingsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID := r.Header.Get("X-User-ID")
+	ownerID, err := strconv.Atoi(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid user ID"})
+		return
+	}
+
+	// Get bookings for events owned by this user
+	rows, err := db.Query(`
+		SELECT b.id, b.event_id, b.name, b.email, b.phone, b.tickets, b.notes, b.status, b.created_at
+		FROM bookings b
+		INNER JOIN events e ON b.event_id = e.id
+		WHERE e.owner_id = ?
+		ORDER BY b.created_at DESC
+	`, ownerID)
+
+	if err != nil {
+		log.Printf("Error querying bookings: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+		return
+	}
+	defer rows.Close()
+
+	var bookings []Booking
+	for rows.Next() {
+		var b Booking
+		err := rows.Scan(&b.ID, &b.EventID, &b.Name, &b.Email, &b.Phone, &b.Tickets, &b.Notes, &b.Status, &b.CreatedAt)
+		if err != nil {
+			log.Printf("Error scanning booking: %v", err)
+			continue
+		}
+		bookings = append(bookings, b)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(bookings)
+}
+
+func updateBookingHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID := r.Header.Get("X-User-ID")
+	ownerID, err := strconv.Atoi(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid user ID"})
+		return
+	}
+
+	var req struct {
+		ID     int    `json:"id"`
+		Status string `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid request"})
+		return
+	}
+
+	// Verify booking belongs to user's event
+	var eventOwnerID int
+	err = db.QueryRow(`
+		SELECT e.owner_id
+		FROM bookings b
+		INNER JOIN events e ON b.event_id = e.id
+		WHERE b.id = ?
+	`, req.ID).Scan(&eventOwnerID)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "booking not found"})
+			return
+		}
+		log.Printf("Error checking booking ownership: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+		return
+	}
+
+	if eventOwnerID != ownerID {
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "you can only update bookings for your own events"})
+		return
+	}
+
+	// Update booking status
+	_, err = db.Exec("UPDATE bookings SET status = ? WHERE id = ?", req.Status, req.ID)
+	if err != nil {
+		log.Printf("Error updating booking: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to update booking"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "booking updated successfully"})
+}
+
+func deleteBookingHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID := r.Header.Get("X-User-ID")
+	ownerID, err := strconv.Atoi(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid user ID"})
+		return
+	}
+
+	var req struct {
+		ID int `json:"id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid request"})
+		return
+	}
+
+	// Verify booking belongs to user's event
+	var eventOwnerID int
+	err = db.QueryRow(`
+		SELECT e.owner_id
+		FROM bookings b
+		INNER JOIN events e ON b.event_id = e.id
+		WHERE b.id = ?
+	`, req.ID).Scan(&eventOwnerID)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "booking not found"})
+			return
+		}
+		log.Printf("Error checking booking ownership: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+		return
+	}
+
+	if eventOwnerID != ownerID {
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "you can only delete bookings for your own events"})
+		return
+	}
+
+	_, err = db.Exec("DELETE FROM bookings WHERE id = ?", req.ID)
+	if err != nil {
+		log.Printf("Error deleting booking: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to delete booking"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "booking deleted successfully"})
 }

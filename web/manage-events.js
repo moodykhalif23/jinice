@@ -1,6 +1,6 @@
 const API_BASE = 'http://localhost:8080';
 
-let authToken = localStorage.getItem('authToken');
+let authToken = sessionStorage.getItem('authToken');
 let currentUser = null;
 let myBusinesses = [];
 let myEvents = [];
@@ -21,7 +21,7 @@ async function checkAuth() {
 
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
-        localStorage.removeItem('authToken');
+        sessionStorage.removeItem('authToken');
         authToken = null;
         showAuthRequired();
         return false;
@@ -350,7 +350,8 @@ function escapeHtml(text) {
 document.getElementById('btn-create-event').addEventListener('click', createEvent);
 document.getElementById('btn-refresh-events').addEventListener('click', loadMyEvents);
 document.getElementById('logout-nav').addEventListener('click', () => {
-  localStorage.removeItem('authToken');
+  sessionStorage.removeItem('authToken');
+  sessionStorage.removeItem('currentUser');
   window.location.href = 'business-owner.html';
 });
 
