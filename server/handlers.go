@@ -258,10 +258,28 @@ func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 func NewRouter() http.Handler {
 	mux := http.NewServeMux()
+
+	// API routes
 	mux.HandleFunc("/health", corsMiddleware(healthHandler))
 	mux.HandleFunc("/businesses", corsMiddleware(businessesRouter))
 	mux.HandleFunc("/stats", corsMiddleware(statsHandler))
 	mux.HandleFunc("/events", corsMiddleware(eventsHandler))
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// Apply CORS for static files
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// Serve static files from ./web/ directory
+		http.StripPrefix("/", http.FileServer(http.Dir("./web/"))).ServeHTTP(w, r)
+	})
+
 	return mux
 }
 

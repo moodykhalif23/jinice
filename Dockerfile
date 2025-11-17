@@ -12,6 +12,9 @@ RUN go mod download
 # Copy source code
 COPY . .
 
+# Copy web directory to /app/web
+COPY web/ ./web/
+
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/app
 
@@ -22,8 +25,9 @@ RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
 
-# Copy the binary from builder stage
+# Copy the binary and web files from builder stage
 COPY --from=builder /app/main .
+COPY --from=builder /app/web ./web/
 
 # Expose port
 EXPOSE 8080
