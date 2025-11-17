@@ -84,6 +84,78 @@
     .output-hidden {
       display: none;
     }
+    .btn-danger {
+      background-color: #dc3545;
+    }
+    .btn-danger:hover {
+      background-color: #c82333;
+    }
+    #events-feed {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .event-item {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      font-size: 0.9rem;
+      border-left: 4px solid #007bff;
+      margin-bottom: 5px;
+    }
+    .event-item:last-child {
+      border-bottom: none;
+    }
+    .event-item.user_created {
+      border-left-color: #28a745;
+    }
+    .event-item.todo_created {
+      border-left-color: #17a2b8;
+    }
+    .event-item.todo_deleted {
+      border-left-color: #dc3545;
+    }
+    .event-time {
+      color: #999;
+      font-size: 0.85rem;
+      margin-top: 5px;
+    }
+    .event-type {
+      font-weight: bold;
+      color: #007bff;
+      display: inline-block;
+      background-color: #e7f3ff;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-bottom: 5px;
+    }
+    .event-item.user_created .event-type {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .event-item.todo_created .event-type {
+      background-color: #d1ecf1;
+      color: #0c5460;
+    }
+    .event-item.todo_deleted .event-type {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .feed-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .feed-status {
+      font-size: 0.85rem;
+      color: #666;
+      padding: 5px 10px;
+      background-color: #f0f0f0;
+      border-radius: 4px;
+    }
     hr {
       margin: 30px 0;
       border: none;
@@ -113,6 +185,17 @@
     <div class="endpoint-title">GET /stats</div>
     <button onclick="callApi('stats')">Get Statistics</button>
     <pre id="output-stats" class="output-hidden">(no output yet)</pre>
+  </div>
+
+  <h2>Real-Time Activity Feed</h2>
+  <div class="feed-controls">
+    <button onclick="loadEvents()">Refresh Events</button>
+    <button onclick="clearEvents()" class="btn-danger">Clear Feed</button>
+    <button onclick="toggleAutoRefresh()" id="auto-refresh-btn">Auto-Refresh: ON</button>
+    <span class="feed-status" id="feed-status">Waiting for events...</span>
+  </div>
+  <div id="events-feed">
+    <p>Loading events...</p>
   </div>
 
   <h2>API Endpoints</h2>

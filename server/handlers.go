@@ -17,6 +17,8 @@ var (
 	usersMutex   sync.Mutex
 	users        = make(map[int]User)
 	nextUserID   = 1
+	eventLog     = make([]Event, 0)
+	eventMutex   sync.Mutex
 )
 
 type Todo struct {
@@ -30,6 +32,13 @@ type User struct {
 	ID    int    `json:"id"`
 	Name  string `json:"name"`
 	Email string `json:"email"`
+}
+
+type Event struct {
+	Type      string      `json:"type"`
+	Message   string      `json:"message"`
+	Data      interface{} `json:"data,omitempty"`
+	Timestamp time.Time   `json:"timestamp"`
 }
 
 func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
@@ -60,6 +69,7 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("/stats", corsMiddleware(statsHandler))
 	mux.HandleFunc("/todos", corsMiddleware(todosRouter))
 	mux.HandleFunc("/users", corsMiddleware(usersRouter))
+	mux.HandleFunc("/events", corsMiddleware(eventsHandler))
 	return mux
 }
 
@@ -186,6 +196,9 @@ func createTodoHandler(w http.ResponseWriter, r *http.Request) {
 	nextTodoID++
 	todosMutex.Unlock()
 
+	// Log event
+	logEvent("todo_created", "Todo created: "+req.Title, todo)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(todo)
@@ -237,7 +250,10 @@ func deleteTodoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	todosMutex.Lock()
-	delete(todos, req.ID)
+	if todo, ok := todos[req.ID]; ok {
+		delete(todos, req.ID)
+		logEvent("todo_deleted", "Todo deleted: "+todo.Title, todo)
+	}
 	todosMutex.Unlock()
 
 	w.WriteHeader(http.StatusOK)
@@ -281,7 +297,35 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 	nextUserID++
 	usersMutex.Unlock()
 
+	// Log event
+	logEvent("user_created", "User "+user.Name+" created", user)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(user)
+}
+
+func logEvent(eventType, message string, data interface{}) {
+	eventMutex.Lock()
+	event := Event{
+		Type:      eventType,
+		Message:   message,
+		Data:      data,
+		Timestamp: time.Now(),
+	}
+	eventLog = append(eventLog, event)
+	if len(eventLog) > 100 {
+		eventLog = eventLog[1:]
+	}
+	eventMutex.Unlock()
+}
+
+func eventsHandler(w http.ResponseWriter, _ *http.Request) {
+	eventMutex.Lock()
+	events := make([]Event, len(eventLog))
+	copy(events, eventLog)
+	eventMutex.Unlock()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(events)
 }
