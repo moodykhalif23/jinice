@@ -16,7 +16,7 @@ function loadEvents() {
       feed.innerHTML = '';
       
       if (!Array.isArray(events) || events.length === 0) {
-        feed.innerHTML = '<p>No events yet. Create todos or users to see activity.</p>';
+        feed.innerHTML = '<p>No events yet. Create businesses to see activity.</p>';
         status.textContent = 'No events';
         lastEventCount = 0;
         return;
@@ -52,7 +52,7 @@ function loadEvents() {
 }
 
 function clearEvents() {
-  document.getElementById('events-feed').innerHTML = '<p>Feed cleared. Create new todos or users to see events.</p>';
+  document.getElementById('events-feed').innerHTML = '<p>Feed cleared. Create new businesses to see events.</p>';
   document.getElementById('feed-status').textContent = 'Feed cleared';
 }
 
@@ -92,22 +92,6 @@ function callApi(endpoint) {
         })
         .catch(err => output.textContent = 'Error: ' + err);
       break;
-    case 'hello':
-      fetch(url)
-        .then(res => res.json())
-        .then(json => {
-          output.textContent = `GET /${endpoint}\nStatus: 200\n\n${formatJson(json)}`;
-        })
-        .catch(err => output.textContent = 'Error: ' + err);
-      break;
-    case 'time':
-      fetch(url)
-        .then(res => res.json())
-        .then(json => {
-          output.textContent = `GET /${endpoint}\nStatus: 200\n\n${formatJson(json)}`;
-        })
-        .catch(err => output.textContent = 'Error: ' + err);
-      break;
     case 'stats':
       fetch(url)
         .then(res => res.json())
@@ -116,15 +100,7 @@ function callApi(endpoint) {
         })
         .catch(err => output.textContent = 'Error: ' + err);
       break;
-    case 'todos':
-      fetch(url)
-        .then(res => res.json())
-        .then(json => {
-          output.textContent = `GET /${endpoint}\nStatus: 200\n\n${formatJson(json)}`;
-        })
-        .catch(err => output.textContent = 'Error: ' + err);
-      break;
-    case 'users':
+    case 'businesses':
       fetch(url)
         .then(res => res.json())
         .then(json => {
@@ -135,6 +111,70 @@ function callApi(endpoint) {
     default:
       output.textContent = 'Unknown endpoint';
   }
+}
+
+function createBusinessTest() {
+  const name = document.getElementById('business-name-test').value.trim();
+  const category = document.getElementById('business-category-test').value.trim();
+  const description = document.getElementById('business-description-test').value.trim();
+  const phone = document.getElementById('business-phone-test').value.trim();
+  const email = document.getElementById('business-email-test').value.trim();
+  const address = document.getElementById('business-address-test').value.trim();
+  const rating = parseFloat(document.getElementById('business-rating-test').value) || 0;
+
+  const output = document.getElementById('output-create-business');
+  output.classList.remove('output-hidden');
+  output.textContent = 'Creating...';
+
+  fetch(base + '/businesses', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, category, description, phone, email, address, rating })
+  })
+    .then(res => res.json())
+    .then(json => {
+      output.textContent = formatJson(json);
+    })
+    .catch(err => output.textContent = 'Error: ' + err);
+}
+
+function updateBusinessTest() {
+  const id = parseInt(document.getElementById('business-id-update').value, 10);
+  const name = document.getElementById('business-name-update').value.trim();
+  const rating = parseFloat(document.getElementById('business-rating-update').value) || 0;
+
+  const output = document.getElementById('output-update-business');
+  output.classList.remove('output-hidden');
+  output.textContent = 'Updating...';
+
+  fetch(base + '/businesses', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, name, rating })
+  })
+    .then(res => res.json())
+    .then(json => {
+      output.textContent = formatJson(json);
+    })
+    .catch(err => output.textContent = 'Error: ' + err);
+}
+
+function deleteBusinessTest() {
+  const id = parseInt(document.getElementById('business-id-delete').value, 10);
+  const output = document.getElementById('output-delete-business');
+  output.classList.remove('output-hidden');
+  output.textContent = 'Deleting...';
+
+  fetch(base + '/businesses', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id })
+  })
+    .then(res => res.text())
+    .then(txt => {
+      output.textContent = txt || 'Deleted';
+    })
+    .catch(err => output.textContent = 'Error: ' + err);
 }
 
 // Load events on page load and auto-refresh

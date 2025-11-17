@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>User Portal - Starterkit</title>
+  <title>Business Directory - Starterkit</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       line-height: 1.6;
-      max-width: 900px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 20px;
       background-color: #f5f5f5;
@@ -63,33 +63,74 @@
     button.success:hover {
       background-color: #218838;
     }
-    input {
+    input, select {
       padding: 8px;
       margin: 10px 0;
       width: 100%;
       max-width: 500px;
       border: 1px solid #ccc;
       border-radius: 4px;
+      box-sizing: border-box;
     }
     label {
       display: block;
       margin-top: 10px;
       font-weight: bold;
     }
-    .item {
-      background-color: #f9f9f9;
+    .business-card {
+      background-color: white;
       border: 1px solid #ddd;
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 4px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 12px 0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-    .item button {
-      margin: 0 2px;
-      padding: 5px 10px;
+    .business-card h3 {
+      margin: 0 0 8px 0;
+      color: #333;
+    }
+    .business-card .category {
+      display: inline-block;
+      background-color: #e9ecef;
+      color: #333;
+      padding: 4px 8px;
+      border-radius: 4px;
       font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .business-card .rating {
+      font-weight: bold;
+      color: #ffc107;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .business-card .description {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .business-card .contact-info {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 8px;
+    }
+    .business-card .contact-info a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    .business-card .contact-info a:hover {
+      text-decoration: underline;
+    }
+    .businesses-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    .no-businesses {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+      font-size: 16px;
     }
     hr {
       margin: 30px 0;
@@ -100,30 +141,53 @@
   <script defer src="./user.js"></script>
 </head>
 <body>
-  <h1>User Portal</h1>
-  <p>Manage your todos and profile</p>
+  <h1>Business Directory</h1>
+  <p>Browse and discover local businesses</p>
 
   <div class="nav">
-    <a href="user.html" class="active">User Portal</a>
+    <a href="user.html" class="active">Business Directory</a>
     <a href="developer.html">Developer Portal</a>
     <a href="index.html">Home</a>
   </div>
 
-  <h2>My Todos</h2>
-  <label for="todo-input">Add a new todo:</label>
-  <input type="text" id="todo-input" placeholder="Enter a todo...">
-  <button id="btn-add-todo" class="success">Add Todo</button>
-  <div id="todos-list"></div>
+  <h2>Directory Listings</h2>
+  <button id="btn-refresh-businesses" class="success">Refresh Listings</button>
+  <div id="businesses-list" class="businesses-grid"></div>
 
-  <h2>User Directory</h2>
-  <div id="users-list"></div>
+  <hr>
 
-  <h2>Add New User</h2>
-  <label for="user-name">Name:</label>
-  <input type="text" id="user-name" placeholder="Enter name">
-  <label for="user-email">Email:</label>
-  <input type="text" id="user-email" placeholder="Enter email">
-  <button id="btn-add-user" class="success">Add User</button>
+  <h2>Add New Business Listing</h2>
+  <label for="business-name">Business Name:</label>
+  <input type="text" id="business-name" placeholder="Enter business name">
+  
+  <label for="business-category">Category:</label>
+  <select id="business-category">
+    <option value="">Select a category</option>
+    <option value="Restaurant">Restaurant</option>
+    <option value="Retail">Retail</option>
+    <option value="Services">Services</option>
+    <option value="Healthcare">Healthcare</option>
+    <option value="Technology">Technology</option>
+    <option value="Entertainment">Entertainment</option>
+    <option value="Other">Other</option>
+  </select>
+  
+  <label for="business-description">Description:</label>
+  <input type="text" id="business-description" placeholder="Brief description">
+  
+  <label for="business-phone">Phone:</label>
+  <input type="tel" id="business-phone" placeholder="Contact phone number">
+  
+  <label for="business-email">Email:</label>
+  <input type="email" id="business-email" placeholder="Contact email">
+  
+  <label for="business-address">Address:</label>
+  <input type="text" id="business-address" placeholder="Business address">
+  
+  <label for="business-rating">Rating (0-5):</label>
+  <input type="number" id="business-rating" placeholder="0-5" min="0" max="5" step="0.1">
+  
+  <button id="btn-add-business" class="success">Add Business Listing</button>
 
   <hr>
   <p>Note: Make sure the backend server is running at <code>http://localhost:8080</code></p>

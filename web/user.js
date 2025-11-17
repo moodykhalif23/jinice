@@ -1,142 +1,113 @@
 const base = 'http://localhost:8080';
 
-function loadTodos() {
-  fetch(base + '/todos')
+function loadBusinesses() {
+  fetch(base + '/businesses')
     .then(res => res.json())
-    .then(todos => {
-      const list = document.getElementById('todos-list');
+    .then(businesses => {
+      const list = document.getElementById('businesses-list');
       list.innerHTML = '';
-      if (Array.isArray(todos) && todos.length > 0) {
-        todos.forEach(todo => {
-          const item = document.createElement('div');
-          item.className = 'item';
-          item.innerHTML = `
-            <span>${todo.id}. ${todo.title} ${todo.completed ? '✓' : ''}</span>
+      if (Array.isArray(businesses) && businesses.length > 0) {
+        businesses.forEach(business => {
+          const card = document.createElement('div');
+          card.className = 'business-card';
+          const rating = business.rating ? `${business.rating}★` : 'No rating';
+          card.innerHTML = `
+            <h3>${business.name}</h3>
+            <span class="category">${business.category}</span>
+            <div class="rating">${rating}</div>
+            <div class="description">${business.description}</div>
+            <div class="contact-info">
+              <div><strong>Phone:</strong> <a href="tel:${business.phone}">${business.phone}</a></div>
+              <div><strong>Email:</strong> <a href="mailto:${business.email}">${business.email}</a></div>
+              <div><strong>Address:</strong> ${business.address}</div>
+            </div>
             <div>
-              <button onclick="toggleTodo(${todo.id}, ${!todo.completed})" class="success">Toggle</button>
-              <button onclick="deleteTodo(${todo.id})" class="danger">Delete</button>
+              <button onclick="deleteBusiness(${business.id})" class="danger">Remove Listing</button>
             </div>
           `;
-          list.appendChild(item);
+          list.appendChild(card);
         });
       } else {
-        list.innerHTML = '<p>No todos yet. Add one above!</p>';
+        list.innerHTML = '<div class="no-businesses">No businesses in directory yet. Be the first to add one!</div>';
       }
     })
     .catch(err => {
-      console.error('Error loading todos:', err);
-      document.getElementById('todos-list').innerHTML = '<p>Error loading todos</p>';
+      console.error('Error loading businesses:', err);
+      document.getElementById('businesses-list').innerHTML = '<p>Error loading businesses</p>';
     });
 }
 
-function loadUsers() {
-  fetch(base + '/users')
-    .then(res => res.json())
-    .then(users => {
-      const list = document.getElementById('users-list');
-      list.innerHTML = '';
-      if (Array.isArray(users) && users.length > 0) {
-        users.forEach(user => {
-          const item = document.createElement('div');
-          item.className = 'item';
-          item.innerHTML = `
-            <span><strong>${user.name}</strong> - ${user.email}</span>
-          `;
-          list.appendChild(item);
-        });
-      } else {
-        list.innerHTML = '<p>No users registered yet.</p>';
-      }
-    })
-    .catch(err => {
-      console.error('Error loading users:', err);
-      document.getElementById('users-list').innerHTML = '<p>Error loading users</p>';
-    });
-}
-
-function toggleTodo(id, completed) {
-  fetch(base + '/todos', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, title: '', completed })
-  })
-    .then(res => {
-      if (res.ok) loadTodos();
-    })
-    .catch(err => console.error('Error toggling todo:', err));
-}
-
-function deleteTodo(id) {
-  fetch(base + '/todos', {
+function deleteBusiness(id) {
+  if (!confirm('Are you sure you want to remove this listing?')) {
+    return;
+  }
+  
+  fetch(base + '/businesses', {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id })
   })
     .then(res => {
-      if (res.ok) loadTodos();
+      if (res.ok) loadBusinesses();
     })
-    .catch(err => console.error('Error deleting todo:', err));
+    .catch(err => console.error('Error deleting business:', err));
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
-    loadTodos();
-    loadUsers();
+    loadBusinesses();
   }, 500);
 
-  // Add Todo
-  const addTodoBtn = document.getElementById('btn-add-todo');
-  if (addTodoBtn) {
-    addTodoBtn.addEventListener('click', () => {
-      const input = document.getElementById('todo-input');
-      const title = input.value.trim();
-      if (!title) {
-        alert('Please enter a todo');
-        return;
-      }
-      
-      fetch(base + '/todos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title })
-      })
-        .then(res => res.json())
-        .then(data => {
-          input.value = '';
-          loadTodos();
-        })
-        .catch(err => {
-          console.error('Error creating todo:', err);
-          alert('Error creating todo: ' + err);
-        });
-    });
+  // Refresh button
+  const refreshBtn = document.getElementById('btn-refresh-businesses');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', loadBusinesses);
   }
 
-  // Add User
-  const addUserBtn = document.getElementById('btn-add-user');
-  if (addUserBtn) {
-    addUserBtn.addEventListener('click', () => {
-      const name = document.getElementById('user-name').value.trim();
-      const email = document.getElementById('user-email').value.trim();
-      if (!name || !email) {
-        alert('Please enter name and email');
+  // Add Business
+  const addBusinessBtn = document.getElementById('btn-add-business');
+  if (addBusinessBtn) {
+    addBusinessBtn.addEventListener('click', () => {
+      const name = document.getElementById('business-name').value.trim();
+      const category = document.getElementById('business-category').value.trim();
+      const description = document.getElementById('business-description').value.trim();
+      const phone = document.getElementById('business-phone').value.trim();
+      const email = document.getElementById('business-email').value.trim();
+      const address = document.getElementById('business-address').value.trim();
+      const rating = parseFloat(document.getElementById('business-rating').value) || 0;
+
+      if (!name || !category || !description || !phone || !email || !address) {
+        alert('Please fill in all required fields');
         return;
       }
-      
-      fetch(base + '/users', {
+
+      if (rating < 0 || rating > 5) {
+        alert('Rating must be between 0 and 5');
+        return;
+      }
+
+      fetch(base + '/businesses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email })
+        body: JSON.stringify({ name, category, description, phone, email, address, rating })
       })
         .then(res => res.json())
         .then(data => {
-          document.getElementById('user-name').value = '';
-          document.getElementById('user-email').value = '';
-          loadUsers();
+          // Clear form
+          document.getElementById('business-name').value = '';
+          document.getElementById('business-category').value = '';
+          document.getElementById('business-description').value = '';
+          document.getElementById('business-phone').value = '';
+          document.getElementById('business-email').value = '';
+          document.getElementById('business-address').value = '';
+          document.getElementById('business-rating').value = '';
+          
+          alert('Business listing added successfully!');
+          loadBusinesses();
         })
         .catch(err => {
-          console.error('Error creating user:', err);
-          alert('Error creating user: ' + err);
+          console.error('Error creating business:', err);
+          alert('Error adding business listing: ' + err);
         });
     });
   }

@@ -8,7 +8,7 @@
     body {
       font-family: Arial, sans-serif;
       line-height: 1.6;
-      max-width: 900px;
+      max-width: 1000px;
       margin: 0 auto;
       padding: 20px;
       background-color: #f5f5f5;
@@ -51,13 +51,19 @@
     button:hover {
       background-color: #0056b3;
     }
-    input {
+    input, textarea {
       padding: 8px;
       margin: 10px 0;
       width: 100%;
-      max-width: 500px;
+      max-width: 100%;
       border: 1px solid #ccc;
       border-radius: 4px;
+      box-sizing: border-box;
+    }
+    textarea {
+      font-family: monospace;
+      min-height: 100px;
+      max-height: 200px;
     }
     pre {
       background-color: #f9f9f9;
@@ -65,6 +71,7 @@
       padding: 10px;
       border-radius: 4px;
       overflow-x: auto;
+      font-size: 12px;
     }
     label {
       display: block;
@@ -74,12 +81,20 @@
     .endpoint {
       background-color: #f9f9f9;
       border-left: 4px solid #007bff;
-      padding: 10px;
+      padding: 15px;
       margin: 10px 0;
+      border-radius: 4px;
     }
     .endpoint-title {
       font-weight: bold;
       color: #007bff;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    .endpoint-description {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 10px;
     }
     .output-hidden {
       display: none;
@@ -109,13 +124,13 @@
     .event-item:last-child {
       border-bottom: none;
     }
-    .event-item.user_created {
+    .event-item.business_created {
       border-left-color: #28a745;
     }
-    .event-item.todo_created {
+    .event-item.business_updated {
       border-left-color: #17a2b8;
     }
-    .event-item.todo_deleted {
+    .event-item.business_deleted {
       border-left-color: #dc3545;
     }
     .event-time {
@@ -132,15 +147,15 @@
       border-radius: 3px;
       margin-bottom: 5px;
     }
-    .event-item.user_created .event-type {
+    .event-item.business_created .event-type {
       background-color: #d4edda;
       color: #155724;
     }
-    .event-item.todo_created .event-type {
+    .event-item.business_updated .event-type {
       background-color: #d1ecf1;
       color: #0c5460;
     }
-    .event-item.todo_deleted .event-type {
+    .event-item.business_deleted .event-type {
       background-color: #f8d7da;
       color: #721c24;
     }
@@ -148,12 +163,20 @@
       display: flex;
       gap: 10px;
       margin-bottom: 10px;
+      flex-wrap: wrap;
     }
     .feed-status {
       font-size: 0.85rem;
       color: #666;
       padding: 5px 10px;
       background-color: #f0f0f0;
+      border-radius: 4px;
+    }
+    .test-section {
+      background-color: white;
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin: 15px 0;
       border-radius: 4px;
     }
     hr {
@@ -166,10 +189,10 @@
 </head>
 <body>
   <h1>Developer Portal</h1>
-  <p>Test and monitor your API endpoints</p>
+  <p>Test and monitor your Business Directory API</p>
 
   <div class="nav">
-    <a href="user.html">User Portal</a>
+    <a href="user.html">Business Directory</a>
     <a href="developer.html" class="active">Developer Portal</a>
     <a href="index.html">Home</a>
   </div>
@@ -177,12 +200,14 @@
   <h2>API Health & Monitoring</h2>
   <div class="endpoint">
     <div class="endpoint-title">GET /health</div>
+    <div class="endpoint-description">Check if the server is running</div>
     <button onclick="callApi('health')">Check Health</button>
     <pre id="output-health" class="output-hidden">(no output yet)</pre>
   </div>
 
   <div class="endpoint">
     <div class="endpoint-title">GET /stats</div>
+    <div class="endpoint-description">View API statistics and uptime</div>
     <button onclick="callApi('stats')">Get Statistics</button>
     <pre id="output-stats" class="output-hidden">(no output yet)</pre>
   </div>
@@ -198,30 +223,74 @@
     <p>Loading events...</p>
   </div>
 
-  <h2>API Endpoints</h2>
-  
-  <div class="endpoint">
-    <div class="endpoint-title">GET /hello</div>
-    <button onclick="callApi('hello')">Call /hello</button>
-    <pre id="output-hello" class="output-hidden">(no output yet)</pre>
-  </div>
+  <h2>Business Directory API Testing</h2>
 
   <div class="endpoint">
-    <div class="endpoint-title">GET /time</div>
-    <button onclick="callApi('time')">Get Current Time</button>
-    <pre id="output-time" class="output-hidden">(no output yet)</pre>
+    <div class="endpoint-title">GET /businesses</div>
+    <div class="endpoint-description">Retrieve all business listings</div>
+    <button onclick="callApi('businesses')">Get All Businesses</button>
+    <pre id="output-businesses" class="output-hidden">(no output yet)</pre>
   </div>
 
-  <div class="endpoint">
-    <div class="endpoint-title">GET /todos</div>
-    <button onclick="callApi('todos')">Get All Todos</button>
-    <pre id="output-todos" class="output-hidden">(no output yet)</pre>
+  <div class="test-section">
+    <div class="endpoint-title">POST /businesses - Create New Business</div>
+    <div class="endpoint-description">Add a new business to the directory</div>
+    <label for="business-name-test">Business Name:</label>
+    <input type="text" id="business-name-test" placeholder="e.g., Coffee Corner">
+    
+    <label for="business-category-test">Category:</label>
+    <select id="business-category-test">
+      <option value="">Select category</option>
+      <option value="Restaurant">Restaurant</option>
+      <option value="Retail">Retail</option>
+      <option value="Services">Services</option>
+      <option value="Healthcare">Healthcare</option>
+      <option value="Technology">Technology</option>
+    </select>
+    
+    <label for="business-description-test">Description:</label>
+    <input type="text" id="business-description-test" placeholder="e.g., Great coffee and pastries">
+    
+    <label for="business-phone-test">Phone:</label>
+    <input type="tel" id="business-phone-test" placeholder="555-1234">
+    
+    <label for="business-email-test">Email:</label>
+    <input type="email" id="business-email-test" placeholder="contact@example.com">
+    
+    <label for="business-address-test">Address:</label>
+    <input type="text" id="business-address-test" placeholder="123 Main St">
+    
+    <label for="business-rating-test">Rating (0-5):</label>
+    <input type="number" id="business-rating-test" placeholder="4.5" min="0" max="5" step="0.1">
+    
+    <button onclick="createBusinessTest()">Create Business</button>
+    <pre id="output-create-business" class="output-hidden">(no output yet)</pre>
   </div>
 
-  <div class="endpoint">
-    <div class="endpoint-title">GET /users</div>
-    <button onclick="callApi('users')">Get All Users</button>
-    <pre id="output-users" class="output-hidden">(no output yet)</pre>
+  <div class="test-section">
+    <div class="endpoint-title">PUT /businesses - Update Business</div>
+    <div class="endpoint-description">Update an existing business listing</div>
+    <label for="business-id-update">Business ID to Update:</label>
+    <input type="number" id="business-id-update" placeholder="e.g., 1">
+    
+    <label for="business-name-update">New Name (optional):</label>
+    <input type="text" id="business-name-update" placeholder="Leave blank to skip">
+    
+    <label for="business-rating-update">New Rating (optional):</label>
+    <input type="number" id="business-rating-update" placeholder="Leave blank to skip" min="0" max="5" step="0.1">
+    
+    <button onclick="updateBusinessTest()">Update Business</button>
+    <pre id="output-update-business" class="output-hidden">(no output yet)</pre>
+  </div>
+
+  <div class="test-section">
+    <div class="endpoint-title">DELETE /businesses - Remove Business</div>
+    <div class="endpoint-description">Delete a business from the directory</div>
+    <label for="business-id-delete">Business ID to Delete:</label>
+    <input type="number" id="business-id-delete" placeholder="e.g., 1">
+    
+    <button onclick="deleteBusinessTest()" class="btn-danger">Delete Business</button>
+    <pre id="output-delete-business" class="output-hidden">(no output yet)</pre>
   </div>
 
   <hr>
