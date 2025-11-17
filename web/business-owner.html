@@ -245,10 +245,6 @@
 
   <!-- Main Dashboard (shown when logged in) -->
   <div id="dashboard" style="display: none;">
-    <div style="text-align: right; margin-bottom: 20px;">
-      <button id="logout-btn" class="danger">Logout</button>
-    </div>
-
   <h2>Business Statistics</h2>
   <div class="stats-grid" id="stats-grid">
     <div class="stat-card">
@@ -275,38 +271,41 @@
 
   <hr>
 
-  <h2>Add New Business</h2>
-  <label for="business-name">Business Name:</label>
-  <input type="text" id="business-name" placeholder="Enter business name">
+  <div style="max-width: 600px; margin: 0 auto;">
+    <h2 style="text-align: center;">Add New Business</h2>
+    <label for="business-name">Business Name:</label>
+    <input type="text" id="business-name" placeholder="Enter business name">
 
-  <label for="business-category">Category:</label>
-  <select id="business-category">
-    <option value="">Select a category</option>
-    <option value="Restaurant">Restaurant</option>
-    <option value="Retail">Retail</option>
-    <option value="Services">Services</option>
-    <option value="Healthcare">Healthcare</option>
-    <option value="Technology">Technology</option>
-    <option value="Entertainment">Entertainment</option>
-    <option value="Other">Other</option>
-  </select>
+    <label for="business-category">Category:</label>
+    <select id="business-category">
+      <option value="">Select a category</option>
+      <option value="Restaurant">Restaurant</option>
+      <option value="Retail">Retail</option>
+      <option value="Services">Services</option>
+      <option value="Healthcare">Healthcare</option>
+      <option value="Technology">Technology</option>
+      <option value="Entertainment">Entertainment</option>
+      <option value="Other">Other</option>
+    </select>
 
-  <label for="business-description">Description:</label>
-  <textarea id="business-description" placeholder="Brief description"></textarea>
+    <label for="business-description">Description:</label>
+    <textarea id="business-description" placeholder="Brief description"></textarea>
 
-  <label for="business-phone">Phone:</label>
-  <input type="tel" id="business-phone" placeholder="Contact phone number">
+    <label for="business-phone">Phone:</label>
+    <input type="tel" id="business-phone" placeholder="Contact phone number">
 
-  <label for="business-email">Email:</label>
-  <input type="email" id="business-email" placeholder="Contact email">
+    <label for="business-email">Email:</label>
+    <input type="email" id="business-email" placeholder="Contact email">
 
-  <label for="business-address">Address:</label>
-  <input type="text" id="business-address" placeholder="Business address">
+    <label for="business-address">Address:</label>
+    <input type="text" id="business-address" placeholder="Business address">
 
-  <label for="business-rating">Rating (0-5):</label>
-  <input type="number" id="business-rating" placeholder="0-5" min="0" max="5" step="0.1">
+    <label for="business-rating">Rating (0-5):</label>
+    <input type="number" id="business-rating" placeholder="0-5" min="0" max="5" step="0.1">
 
-  <button id="btn-add-business" class="success">Add Business</button>
+    <button id="btn-add-business" class="success" style="width: 100%;">Add Business</button>
+  </div>
+  </div>
 
   <hr>
   <p>Jinice (copyright 2026)</p>
