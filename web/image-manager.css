@@ -1,4 +1,4 @@
-/* Image Manager Styles */
+/* Image Manager Styles - Responsive */
 
 .image-manager {
     margin: 20px 0;
@@ -6,9 +6,25 @@
 
 .image-gallery {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
     margin-bottom: 30px;
+}
+
+/* Tablet and up */
+@media (min-width: 576px) {
+    .image-gallery {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 12px;
+    }
+}
+
+/* Desktop and up */
+@media (min-width: 768px) {
+    .image-gallery {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+    }
 }
 
 .image-item {
@@ -30,9 +46,23 @@
 
 .image-item img {
     width: 100%;
-    height: 200px;
+    height: 150px;
     object-fit: cover;
     display: block;
+}
+
+/* Tablet and up */
+@media (min-width: 576px) {
+    .image-item img {
+        height: 180px;
+    }
+}
+
+/* Desktop and up */
+@media (min-width: 768px) {
+    .image-item img {
+        height: 200px;
+    }
 }
 
 .image-overlay {
@@ -166,7 +196,13 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    max-width: 500px;
+    max-width: 100%;
+}
+
+@media (min-width: 576px) {
+    .upload-section form {
+        max-width: 500px;
+    }
 }
 
 .upload-section input[type="file"],
@@ -244,20 +280,39 @@
 
 .thumbnail-strip {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     overflow-x: auto;
     padding: 10px 0;
+    -webkit-overflow-scrolling: touch;
 }
 
 .thumbnail {
-    width: 80px;
-    height: 80px;
+    width: 60px;
+    height: 60px;
     object-fit: cover;
     border-radius: 4px;
     cursor: pointer;
     border: 2px solid transparent;
     transition: all 0.2s;
     flex-shrink: 0;
+}
+
+@media (min-width: 576px) {
+    .thumbnail {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .thumbnail-strip {
+        gap: 10px;
+    }
+}
+
+@media (min-width: 768px) {
+    .thumbnail {
+        width: 80px;
+        height: 80px;
+    }
 }
 
 .thumbnail:hover {
@@ -269,19 +324,41 @@
     border-color: #4CAF50;
 }
 
-/* Responsive */
+/* Additional Mobile Optimizations */
 
-@media (max-width: 768px) {
-    .image-gallery {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 10px;
+@media (max-width: 575px) {
+    .upload-tabs {
+        flex-direction: column;
+        gap: 5px;
     }
     
-    .image-item img {
-        height: 150px;
+    .tab-btn {
+        width: 100%;
+        text-align: left;
+        padding: 12px 15px;
     }
     
-    .upload-section form {
-        max-width: 100%;
+    .image-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .image-actions button {
+        width: 100%;
+    }
+    
+    .main-image img {
+        max-height: 300px;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .image-overlay {
+        opacity: 0.9;
+    }
+    
+    .thumbnail:active {
+        transform: scale(0.95);
     }
 }

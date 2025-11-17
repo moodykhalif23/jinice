@@ -4,73 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Event Owner Registration - JiNice</title>
+  <link rel="stylesheet" href="styles.css">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #f5f5f5;
-    }
-    h1 {
-      border-bottom: 2px solid #333;
-      padding-bottom: 10px;
-      text-align: center;
-    }
-    .nav {
-      margin: 20px 0;
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
-    .nav a {
-      padding: 10px 20px;
-      background-color: #007bff;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-    }
-    .nav a:hover {
-      background-color: #0056b3;
-    }
-    button {
-      padding: 10px 20px;
-      cursor: pointer;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      width: 100%;
-      font-size: 16px;
-    }
-    button:hover {
-      background-color: #218838;
-    }
-    button.secondary {
-      background-color: #6c757d;
-      margin-top: 10px;
-    }
-    button.secondary:hover {
-      background-color: #545b62;
-    }
-    input, select {
-      padding: 10px;
-      margin: 10px 0;
-      width: 100%;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-      font-size: 14px;
-    }
-    label {
-      display: block;
-      margin-top: 15px;
-      font-weight: bold;
-    }
     .form-container {
       background-color: white;
-      padding: 30px;
+      padding: 25px;
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       margin: 20px 0;
@@ -82,59 +20,64 @@
       margin: 20px 0;
       border-radius: 4px;
     }
-    hr {
-      margin: 30px 0;
-      border: none;
-      border-top: 1px solid #ddd;
+    .info-box ul {
+      margin: 10px 0 0 20px;
+    }
+    @media (min-width: 576px) {
+      .form-container {
+        padding: 30px;
+      }
     }
   </style>
   <script defer src="./event-owner-register.js"></script>
 </head>
 <body>
-  <h1>Event Owner Registration</h1>
-  <p style="text-align: center;">Create events and reach your audience on JiNice</p>
+  <div class="container-form">
+    <h1 style="text-align: center;">Event Owner Registration</h1>
+    <p style="text-align: center;">Create events and reach your audience on JiNice</p>
 
-  <div class="nav">
-    <a href="index.html">Home</a>
-    <a href="business-owner.html">Business Owner Login</a>
+    <div class="nav" style="justify-content: center;">
+      <a href="index.html">Home</a>
+      <a href="business-owner.html">Business Owner Login</a>
+    </div>
+
+    <div class="info-box">
+      <strong>Event Owners can:</strong>
+      <ul>
+        <li>Create and manage standalone events</li>
+        <li>Reach local audiences</li>
+        <li>Promote community activities</li>
+        <li>No business required!</li>
+      </ul>
+    </div>
+
+    <div class="form-container">
+      <h2 style="margin-top: 0;">Register as Event Owner</h2>
+      <form id="register-form">
+        <label for="register-name">Full Name: *</label>
+        <input type="text" id="register-name" placeholder="Enter your full name" required>
+
+        <label for="register-email">Email: *</label>
+        <input type="email" id="register-email" placeholder="Enter your email" required>
+
+        <label for="register-password">Password: *</label>
+        <input type="password" id="register-password" placeholder="Enter your password" required>
+
+        <label for="register-organization">Organization Name:</label>
+        <input type="text" id="register-organization" placeholder="Organization or group name (optional)">
+
+        <label for="register-phone">Phone:</label>
+        <input type="tel" id="register-phone" placeholder="Contact phone number (optional)">
+
+        <button type="submit" style="width: 100%;">Register as Event Owner</button>
+        <button type="button" class="secondary" style="width: 100%; margin-top: 10px;" onclick="window.location.href='business-owner.html'">
+          Already have an account? Login
+        </button>
+      </form>
+    </div>
+
+    <hr>
+    <p style="text-align: center;">Jinice (copyright 2026)</p>
   </div>
-
-  <div class="info-box">
-    <strong>Event Owners can:</strong>
-    <ul>
-      <li>Create and manage standalone events</li>
-      <li>Reach local audiences</li>
-      <li>Promote community activities</li>
-      <li>No business required!</li>
-    </ul>
-  </div>
-
-  <div class="form-container">
-    <h2 style="margin-top: 0;">Register as Event Owner</h2>
-    <form id="register-form">
-      <label for="register-name">Full Name: *</label>
-      <input type="text" id="register-name" placeholder="Enter your full name" required>
-
-      <label for="register-email">Email: *</label>
-      <input type="email" id="register-email" placeholder="Enter your email" required>
-
-      <label for="register-password">Password: *</label>
-      <input type="password" id="register-password" placeholder="Enter your password" required>
-
-      <label for="register-organization">Organization Name:</label>
-      <input type="text" id="register-organization" placeholder="Organization or group name (optional)">
-
-      <label for="register-phone">Phone:</label>
-      <input type="tel" id="register-phone" placeholder="Contact phone number (optional)">
-
-      <button type="submit">Register as Event Owner</button>
-      <button type="button" class="secondary" onclick="window.location.href='business-owner.html'">
-        Already have an account? Login
-      </button>
-    </form>
-  </div>
-
-  <hr>
-  <p style="text-align: center;">Jinice (copyright 2026)</p>
 </body>
 </html>

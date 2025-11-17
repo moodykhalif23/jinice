@@ -4,54 +4,21 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Business Details - Business Directory</title>
+  <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="image-manager.css">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #f5f5f5;
-    }
-    h1 {
-      border-bottom: 2px solid #333;
-      padding-bottom: 10px;
-    }
-    h2 {
-      margin-top: 30px;
-      color: #333;
-    }
-    .nav {
-      margin: 20px 0;
-      display: flex;
-      gap: 10px;
-    }
-    .nav a {
-      padding: 10px 20px;
-      background-color: #007bff;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-    }
-    .nav a:hover {
-      background-color: #0056b3;
-    }
-    .nav a.active {
-      background-color: #28a745;
-    }
     .business-details {
       background-color: white;
       border: 1px solid #ddd;
       border-radius: 8px;
-      padding: 24px;
+      padding: 20px;
       margin: 20px 0;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
     .business-header {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
+      flex-direction: column;
+      gap: 15px;
       margin-bottom: 20px;
     }
     .business-title {
@@ -61,7 +28,6 @@
       font-size: 24px;
       font-weight: bold;
       color: #ffc107;
-      text-align: right;
     }
     .category-badge {
       display: inline-block;
@@ -81,7 +47,7 @@
     .contact-section {
       background-color: #f8f9fa;
       border-radius: 8px;
-      padding: 20px;
+      padding: 15px;
       margin-top: 20px;
     }
     .contact-section h3 {
@@ -91,7 +57,7 @@
     }
     .contact-item {
       display: flex;
-      align-items: center;
+      flex-direction: column;
       margin: 10px 0;
       padding: 8px 0;
       border-bottom: 1px solid #eee;
@@ -101,11 +67,12 @@
     }
     .contact-label {
       font-weight: bold;
-      width: 80px;
       color: #666;
+      margin-bottom: 5px;
     }
     .contact-value {
       flex: 1;
+      word-break: break-word;
     }
     .contact-value a {
       color: #007bff;
@@ -114,39 +81,6 @@
     .contact-value a:hover {
       text-decoration: underline;
     }
-    .loading {
-      text-align: center;
-      padding: 40px 20px;
-      color: #666;
-      font-size: 16px;
-    }
-    .error {
-      text-align: center;
-      padding: 40px 20px;
-      color: #dc3545;
-      font-size: 18px;
-      background-color: #f8d7da;
-      border-radius: 8px;
-      margin: 20px 0;
-    }
-    .back-link {
-      display: inline-block;
-      margin-bottom: 20px;
-      padding: 8px 16px;
-      background-color: #6c757d;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-    .back-link:hover {
-      background-color: #545b62;
-    }
-    hr {
-      margin: 30px 0;
-      border: none;
-      border-top: 1px solid #ddd;
-    }
     .image-section {
       margin: 30px 0;
     }
@@ -154,29 +88,55 @@
       margin-bottom: 15px;
       color: #333;
     }
+    @media (min-width: 576px) {
+      .business-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+      .business-rating {
+        text-align: right;
+      }
+      .contact-item {
+        flex-direction: row;
+        align-items: center;
+      }
+      .contact-label {
+        width: 100px;
+        margin-bottom: 0;
+      }
+      .business-details {
+        padding: 24px;
+      }
+      .contact-section {
+        padding: 20px;
+      }
+    }
   </style>
   <script src="./image-manager.js"></script>
   <script defer src="./business-detail.js"></script>
 </head>
 <body>
-  <h1>Business Directory</h1>
-  <p>Comprehensive business information</p>
+  <div class="container-narrow">
+    <h1>Business Directory</h1>
+    <p>Comprehensive business information</p>
 
-  <div class="nav">
-    <a href="user.html">Browse Businesses</a>
-    <a href="business-owner.html">Business Owner Portal</a>
-    <a href="index.html">Home</a>
-  </div>
-
-  <a href="user.html" class="back-link">← Back to Directory</a>
-
-  <div id="content">
-    <div class="loading">
-      Loading business details...
+    <div class="nav">
+      <a href="user.html">Browse Businesses</a>
+      <a href="business-owner.html">Business Owner Portal</a>
+      <a href="index.html">Home</a>
     </div>
-  </div>
 
-  <hr>
-  <p>Jinice (copyright 2026)</p>
+    <a href="user.html" class="back-link">← Back to Directory</a>
+
+    <div id="content">
+      <div class="loading">
+        Loading business details...
+      </div>
+    </div>
+
+    <hr>
+    <p>Jinice (copyright 2026)</p>
+  </div>
 </body>
 </html>

@@ -4,67 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Developer Portal - Starterkit</title>
+  <link rel="stylesheet" href="styles.css">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #f5f5f5;
-    }
-    h1 {
-      border-bottom: 2px solid #333;
-      padding-bottom: 10px;
-    }
-    h2 {
-      margin-top: 30px;
-      color: #333;
-    }
-    .nav {
-      margin: 20px 0;
-      display: flex;
-      gap: 10px;
-    }
-    .nav a {
-      padding: 10px 20px;
-      background-color: #007bff;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-    }
-    .nav a:hover {
-      background-color: #0056b3;
-    }
-    .nav a.active {
-      background-color: #28a745;
-    }
-    button {
-      padding: 8px 16px;
-      margin: 5px 5px 5px 0;
-      cursor: pointer;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 4px;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    input, textarea {
-      padding: 8px;
-      margin: 10px 0;
-      width: 100%;
-      max-width: 100%;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-    }
-    textarea {
-      font-family: monospace;
-      min-height: 100px;
-      max-height: 200px;
-    }
     pre {
       background-color: #f9f9f9;
       border: 1px solid #ddd;
@@ -72,11 +13,6 @@
       border-radius: 4px;
       overflow-x: auto;
       font-size: 12px;
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-      font-weight: bold;
     }
     .endpoint {
       background-color: #f9f9f9;
@@ -98,12 +34,6 @@
     }
     .output-hidden {
       display: none;
-    }
-    .btn-danger {
-      background-color: #dc3545;
-    }
-    .btn-danger:hover {
-      background-color: #c82333;
     }
     #events-feed {
       background-color: #f9f9f9;
@@ -179,121 +109,118 @@
       margin: 15px 0;
       border-radius: 4px;
     }
-    hr {
-      margin: 30px 0;
-      border: none;
-      border-top: 1px solid #ddd;
-    }
   </style>
   <script defer src="./developer.js"></script>
 </head>
 <body>
-  <h1>Developer Portal</h1>
-  <p>Test and monitor your Business Directory API</p>
+  <div class="container">
+    <h1>Developer Portal</h1>
+    <p>Test and monitor your Business Directory API</p>
 
-  <div class="nav">
-    <a href="user.html">Business Directory</a>
-    <a href="developer.html" class="active">Developer Portal</a>
-    <a href="index.html">Home</a>
+    <div class="nav">
+      <a href="user.html">Business Directory</a>
+      <a href="developer.html" class="active">Developer Portal</a>
+      <a href="index.html">Home</a>
+    </div>
+
+    <h2>API Health & Monitoring</h2>
+    <div class="endpoint">
+      <div class="endpoint-title">GET /health</div>
+      <div class="endpoint-description">Check if the server is running</div>
+      <button onclick="callApi('health')">Check Health</button>
+      <pre id="output-health" class="output-hidden">(no output yet)</pre>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-title">GET /stats</div>
+      <div class="endpoint-description">View API statistics and uptime</div>
+      <button onclick="callApi('stats')">Get Statistics</button>
+      <pre id="output-stats" class="output-hidden">(no output yet)</pre>
+    </div>
+
+    <h2>Real-Time Activity Feed</h2>
+    <div class="feed-controls">
+      <button onclick="loadEvents()">Refresh Events</button>
+      <button onclick="clearEvents()" class="danger">Clear Feed</button>
+      <button onclick="toggleAutoRefresh()" id="auto-refresh-btn">Auto-Refresh: ON</button>
+      <span class="feed-status" id="feed-status">Waiting for events...</span>
+    </div>
+    <div id="events-feed">
+      <p>Loading events...</p>
+    </div>
+
+    <h2>Business Directory API Testing</h2>
+
+    <div class="endpoint">
+      <div class="endpoint-title">GET /businesses</div>
+      <div class="endpoint-description">Retrieve all business listings</div>
+      <button onclick="callApi('businesses')">Get All Businesses</button>
+      <pre id="output-businesses" class="output-hidden">(no output yet)</pre>
+    </div>
+
+    <div class="test-section">
+      <div class="endpoint-title">POST /businesses - Create New Business</div>
+      <div class="endpoint-description">Add a new business to the directory</div>
+      <label for="business-name-test">Business Name:</label>
+      <input type="text" id="business-name-test" placeholder="e.g., Coffee Corner">
+      
+      <label for="business-category-test">Category:</label>
+      <select id="business-category-test">
+        <option value="">Select category</option>
+        <option value="Restaurant">Restaurant</option>
+        <option value="Retail">Retail</option>
+        <option value="Services">Services</option>
+        <option value="Healthcare">Healthcare</option>
+        <option value="Technology">Technology</option>
+      </select>
+      
+      <label for="business-description-test">Description:</label>
+      <input type="text" id="business-description-test" placeholder="e.g., Great coffee and pastries">
+      
+      <label for="business-phone-test">Phone:</label>
+      <input type="tel" id="business-phone-test" placeholder="555-1234">
+      
+      <label for="business-email-test">Email:</label>
+      <input type="email" id="business-email-test" placeholder="contact@example.com">
+      
+      <label for="business-address-test">Address:</label>
+      <input type="text" id="business-address-test" placeholder="123 Main St">
+      
+      <label for="business-rating-test">Rating (0-5):</label>
+      <input type="number" id="business-rating-test" placeholder="4.5" min="0" max="5" step="0.1">
+      
+      <button onclick="createBusinessTest()">Create Business</button>
+      <pre id="output-create-business" class="output-hidden">(no output yet)</pre>
+    </div>
+
+    <div class="test-section">
+      <div class="endpoint-title">PUT /businesses - Update Business</div>
+      <div class="endpoint-description">Update an existing business listing</div>
+      <label for="business-id-update">Business ID to Update:</label>
+      <input type="number" id="business-id-update" placeholder="e.g., 1">
+      
+      <label for="business-name-update">New Name (optional):</label>
+      <input type="text" id="business-name-update" placeholder="Leave blank to skip">
+      
+      <label for="business-rating-update">New Rating (optional):</label>
+      <input type="number" id="business-rating-update" placeholder="Leave blank to skip" min="0" max="5" step="0.1">
+      
+      <button onclick="updateBusinessTest()">Update Business</button>
+      <pre id="output-update-business" class="output-hidden">(no output yet)</pre>
+    </div>
+
+    <div class="test-section">
+      <div class="endpoint-title">DELETE /businesses - Remove Business</div>
+      <div class="endpoint-description">Delete a business from the directory</div>
+      <label for="business-id-delete">Business ID to Delete:</label>
+      <input type="number" id="business-id-delete" placeholder="e.g., 1">
+      
+      <button onclick="deleteBusinessTest()" class="danger">Delete Business</button>
+      <pre id="output-delete-business" class="output-hidden">(no output yet)</pre>
+    </div>
+
+    <hr>
+    <p>Jinice (copyright 2026)</p>
   </div>
-
-  <h2>API Health & Monitoring</h2>
-  <div class="endpoint">
-    <div class="endpoint-title">GET /health</div>
-    <div class="endpoint-description">Check if the server is running</div>
-    <button onclick="callApi('health')">Check Health</button>
-    <pre id="output-health" class="output-hidden">(no output yet)</pre>
-  </div>
-
-  <div class="endpoint">
-    <div class="endpoint-title">GET /stats</div>
-    <div class="endpoint-description">View API statistics and uptime</div>
-    <button onclick="callApi('stats')">Get Statistics</button>
-    <pre id="output-stats" class="output-hidden">(no output yet)</pre>
-  </div>
-
-  <h2>Real-Time Activity Feed</h2>
-  <div class="feed-controls">
-    <button onclick="loadEvents()">Refresh Events</button>
-    <button onclick="clearEvents()" class="btn-danger">Clear Feed</button>
-    <button onclick="toggleAutoRefresh()" id="auto-refresh-btn">Auto-Refresh: ON</button>
-    <span class="feed-status" id="feed-status">Waiting for events...</span>
-  </div>
-  <div id="events-feed">
-    <p>Loading events...</p>
-  </div>
-
-  <h2>Business Directory API Testing</h2>
-
-  <div class="endpoint">
-    <div class="endpoint-title">GET /businesses</div>
-    <div class="endpoint-description">Retrieve all business listings</div>
-    <button onclick="callApi('businesses')">Get All Businesses</button>
-    <pre id="output-businesses" class="output-hidden">(no output yet)</pre>
-  </div>
-
-  <div class="test-section">
-    <div class="endpoint-title">POST /businesses - Create New Business</div>
-    <div class="endpoint-description">Add a new business to the directory</div>
-    <label for="business-name-test">Business Name:</label>
-    <input type="text" id="business-name-test" placeholder="e.g., Coffee Corner">
-    
-    <label for="business-category-test">Category:</label>
-    <select id="business-category-test">
-      <option value="">Select category</option>
-      <option value="Restaurant">Restaurant</option>
-      <option value="Retail">Retail</option>
-      <option value="Services">Services</option>
-      <option value="Healthcare">Healthcare</option>
-      <option value="Technology">Technology</option>
-    </select>
-    
-    <label for="business-description-test">Description:</label>
-    <input type="text" id="business-description-test" placeholder="e.g., Great coffee and pastries">
-    
-    <label for="business-phone-test">Phone:</label>
-    <input type="tel" id="business-phone-test" placeholder="555-1234">
-    
-    <label for="business-email-test">Email:</label>
-    <input type="email" id="business-email-test" placeholder="contact@example.com">
-    
-    <label for="business-address-test">Address:</label>
-    <input type="text" id="business-address-test" placeholder="123 Main St">
-    
-    <label for="business-rating-test">Rating (0-5):</label>
-    <input type="number" id="business-rating-test" placeholder="4.5" min="0" max="5" step="0.1">
-    
-    <button onclick="createBusinessTest()">Create Business</button>
-    <pre id="output-create-business" class="output-hidden">(no output yet)</pre>
-  </div>
-
-  <div class="test-section">
-    <div class="endpoint-title">PUT /businesses - Update Business</div>
-    <div class="endpoint-description">Update an existing business listing</div>
-    <label for="business-id-update">Business ID to Update:</label>
-    <input type="number" id="business-id-update" placeholder="e.g., 1">
-    
-    <label for="business-name-update">New Name (optional):</label>
-    <input type="text" id="business-name-update" placeholder="Leave blank to skip">
-    
-    <label for="business-rating-update">New Rating (optional):</label>
-    <input type="number" id="business-rating-update" placeholder="Leave blank to skip" min="0" max="5" step="0.1">
-    
-    <button onclick="updateBusinessTest()">Update Business</button>
-    <pre id="output-update-business" class="output-hidden">(no output yet)</pre>
-  </div>
-
-  <div class="test-section">
-    <div class="endpoint-title">DELETE /businesses - Remove Business</div>
-    <div class="endpoint-description">Delete a business from the directory</div>
-    <label for="business-id-delete">Business ID to Delete:</label>
-    <input type="number" id="business-id-delete" placeholder="e.g., 1">
-    
-    <button onclick="deleteBusinessTest()" class="btn-danger">Delete Business</button>
-    <pre id="output-delete-business" class="output-hidden">(no output yet)</pre>
-  </div>
-
-  <hr>
-  <p>Jinice (copyright 2026)</p>
 </body>
 </html>

@@ -4,40 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Event Details - JiNice</title>
+  <link rel="stylesheet" href="styles.css">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #f5f5f5;
-    }
-    h1 {
-      border-bottom: 2px solid #333;
-      padding-bottom: 10px;
-      margin-bottom: 20px;
-    }
-    .nav {
-      margin: 20px 0;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .nav a {
-      padding: 10px 20px;
-      background-color: #007bff;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-    }
-    .nav a:hover {
-      background-color: #0056b3;
-    }
     .event-container {
       background-color: white;
       border-radius: 8px;
-      padding: 30px;
+      padding: 20px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       margin: 20px 0;
     }
@@ -47,13 +19,13 @@
       margin-bottom: 20px;
     }
     .event-title {
-      font-size: 32px;
+      font-size: clamp(1.5rem, 4vw, 2rem);
       color: #333;
       margin: 0 0 10px 0;
     }
     .event-meta {
       display: flex;
-      gap: 15px;
+      gap: 10px;
       flex-wrap: wrap;
       margin: 15px 0;
     }
@@ -98,8 +70,8 @@
     }
     .event-info-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
+      grid-template-columns: 1fr;
+      gap: 15px;
       margin: 20px 0;
     }
     .info-item {
@@ -117,12 +89,13 @@
     .info-value {
       color: #555;
       font-size: 16px;
+      word-break: break-word;
     }
     .booking-section {
       background-color: #f8f9fa;
       border: 2px solid #007bff;
       border-radius: 8px;
-      padding: 25px;
+      padding: 20px;
       margin: 30px 0;
     }
     .booking-section h2 {
@@ -132,74 +105,7 @@
       padding: 0;
     }
     .booking-form {
-      max-width: 500px;
-    }
-    .form-group {
-      margin: 15px 0;
-    }
-    .form-group label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 5px;
-      color: #333;
-    }
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
-      box-sizing: border-box;
-    }
-    .form-group textarea {
-      min-height: 80px;
-      resize: vertical;
-    }
-    button {
-      padding: 12px 24px;
-      cursor: pointer;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-size: 16px;
-      font-weight: 500;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    button.success {
-      background-color: #28a745;
-    }
-    button.success:hover {
-      background-color: #218838;
-    }
-    button:disabled {
-      background-color: #6c757d;
-      cursor: not-allowed;
-    }
-    .loading {
-      text-align: center;
-      padding: 60px 20px;
-      color: #999;
-    }
-    .error {
-      background-color: #f8d7da;
-      color: #721c24;
-      padding: 15px;
-      border-radius: 4px;
-      margin: 20px 0;
-      border: 1px solid #f5c6cb;
-    }
-    .success-message {
-      background-color: #d4edda;
-      color: #155724;
-      padding: 15px;
-      border-radius: 4px;
-      margin: 20px 0;
-      border: 1px solid #c3e6cb;
+      max-width: 100%;
     }
     .business-link {
       background-color: #e7f3ff;
@@ -216,33 +122,44 @@
     .business-link a:hover {
       text-decoration: underline;
     }
-    hr {
-      margin: 30px 0;
-      border: none;
-      border-top: 1px solid #ddd;
+    @media (min-width: 576px) {
+      .event-info-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .event-container {
+        padding: 30px;
+      }
+      .booking-section {
+        padding: 25px;
+      }
+      .booking-form {
+        max-width: 500px;
+      }
     }
   </style>
   <script defer src="./event-detail.js"></script>
 </head>
 <body>
-  <h1>JiNice - Event Details</h1>
+  <div class="container">
+    <h1>JiNice - Event Details</h1>
 
-  <div class="nav">
-    <a href="user.html">Browse Businesses</a>
-    <a href="events.html">Browse Events</a>
-    <a href="business-owner.html">Business Owner Portal</a>
-    <a href="index.html">Home</a>
+    <div class="nav">
+      <a href="user.html">Browse Businesses</a>
+      <a href="events.html">Browse Events</a>
+      <a href="business-owner.html">Business Owner Portal</a>
+      <a href="index.html">Home</a>
+    </div>
+
+    <div id="loading" class="loading">
+      <p>Loading event details...</p>
+    </div>
+
+    <div id="error-container"></div>
+
+    <div id="event-container" style="display: none;"></div>
+
+    <hr>
+    <p>Jinice (copyright 2026)</p>
   </div>
-
-  <div id="loading" class="loading">
-    <p>Loading event details...</p>
-  </div>
-
-  <div id="error-container"></div>
-
-  <div id="event-container" style="display: none;"></div>
-
-  <hr>
-  <p>Jinice (copyright 2026)</p>
 </body>
 </html>

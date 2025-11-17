@@ -4,144 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Manage Events - JiNice</title>
+  <link rel="stylesheet" href="styles.css">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #f5f5f5;
-    }
-    h1 {
-      border-bottom: 2px solid #333;
-      padding-bottom: 10px;
-    }
-    h2 {
-      margin-top: 30px;
-      color: #333;
-    }
-    .nav {
-      margin: 20px 0;
-      display: flex;
-      gap: 10px;
-    }
-    .nav a {
-      padding: 10px 20px;
-      background-color: #007bff;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-    }
-    .nav a:hover {
-      background-color: #0056b3;
-    }
-    .nav a.active {
-      background-color: #28a745;
-    }
-    button {
-      padding: 8px 16px;
-      margin: 5px 5px 5px 0;
-      cursor: pointer;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 4px;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    button.danger {
-      background-color: #dc3545;
-    }
-    button.danger:hover {
-      background-color: #c82333;
-    }
-    button.success {
-      background-color: #28a745;
-    }
-    button.success:hover {
-      background-color: #218838;
-    }
-    button.secondary {
-      background-color: #6c757d;
-    }
-    button.secondary:hover {
-      background-color: #545b62;
-    }
-    input, select, textarea {
-      padding: 8px;
-      margin: 10px 0;
-      width: 100%;
-      max-width: 500px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-    }
-    textarea {
-      min-height: 80px;
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-      font-weight: bold;
-    }
-    .event-card {
-      background-color: white;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 16px;
-      margin: 12px 0;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    .event-card h3 {
-      margin: 0 0 8px 0;
-      color: #333;
-    }
-    .event-date {
-      display: inline-block;
-      background-color: #007bff;
-      color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      margin-bottom: 8px;
-    }
-    .event-category {
-      display: inline-block;
-      background-color: #e9ecef;
-      color: #333;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      margin-left: 8px;
-    }
-    .event-description {
-      color: #666;
-      font-size: 14px;
-      margin: 8px 0;
-    }
-    .event-details {
-      font-size: 13px;
-      color: #555;
-      margin: 8px 0;
-    }
     .event-actions {
       margin-top: 12px;
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
-    }
-    .events-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-      gap: 16px;
-    }
-    .no-events {
-      text-align: center;
-      padding: 40px 20px;
-      color: #999;
-      font-size: 16px;
     }
     .edit-form {
       background-color: #f8f9fa;
@@ -154,11 +23,6 @@
     .edit-form.show {
       display: block;
     }
-    hr {
-      margin: 30px 0;
-      border: none;
-      border-top: 1px solid #ddd;
-    }
     .auth-required {
       text-align: center;
       padding: 60px 20px;
@@ -170,79 +34,81 @@
   <script defer src="./manage-events.js"></script>
 </head>
 <body>
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-    <div>
-      <h1 style="margin: 0; padding-bottom: 10px; border-bottom: 2px solid #333;">Manage Your Events</h1>
+  <div class="container">
+    <div class="header-with-auth">
+      <div>
+        <h1 style="margin: 0; padding-bottom: 10px; border-bottom: 2px solid #333;">Manage Your Events</h1>
+      </div>
+      <div class="auth-buttons">
+        <button id="logout-nav" class="danger" style="display: none;">Logout</button>
+      </div>
     </div>
-    <div id="auth-buttons" style="display: flex; gap: 10px;">
-      <button id="logout-nav" class="danger" style="display: none;">Logout</button>
-    </div>
-  </div>
   
-  <p id="user-status">Create and manage events (standalone or linked to your businesses)</p>
+    <p id="user-status">Create and manage events (standalone or linked to your businesses)</p>
 
-  <div class="nav">
-    <a href="user.html">Browse Businesses</a>
-    <a href="events.html">Browse Events</a>
-    <a href="business-owner.html">Business Portal</a>
-    <a href="manage-events.html" class="active">Manage Events</a>
-    <a href="index.html">Home</a>
-  </div>
+    <div class="nav">
+      <a href="user.html">Browse Businesses</a>
+      <a href="events.html">Browse Events</a>
+      <a href="business-owner.html">Business Portal</a>
+      <a href="manage-events.html" class="active">Manage Events</a>
+      <a href="index.html">Home</a>
+    </div>
 
-  <!-- Auth Required Message -->
-  <div id="auth-required" class="auth-required" style="display: none;">
-    <h2>Authentication Required</h2>
-    <p>Please log in to manage your events.</p>
-    <button onclick="window.location.href='business-owner.html'" class="success">Go to Login</button>
-  </div>
+    <!-- Auth Required Message -->
+    <div id="auth-required" class="auth-required" style="display: none;">
+      <h2>Authentication Required</h2>
+      <p>Please log in to manage your events.</p>
+      <button onclick="window.location.href='business-owner.html'" class="success">Go to Login</button>
+    </div>
 
-  <!-- Main Dashboard (shown when logged in) -->
-  <div id="dashboard" style="display: none;">
-    <h2>Your Events</h2>
-    <button id="btn-refresh-events" class="success">Refresh Events</button>
-    <div id="events-list" class="events-grid"></div>
+    <!-- Main Dashboard (shown when logged in) -->
+    <div id="dashboard" style="display: none;">
+      <h2>Your Events</h2>
+      <button id="btn-refresh-events" class="success">Refresh Events</button>
+      <div id="events-list" class="events-grid"></div>
+
+      <hr>
+
+      <div class="container-form">
+        <h2 style="text-align: center;">Create New Event</h2>
+        
+        <label for="event-business">Link to Business (Optional):</label>
+        <select id="event-business">
+          <option value="">Loading businesses...</option>
+        </select>
+
+        <label for="event-title">Event Title:</label>
+        <input type="text" id="event-title" placeholder="Enter event title" required>
+
+        <label for="event-category">Category:</label>
+        <select id="event-category">
+          <option value="">Select a category</option>
+          <option value="Workshop">Workshop</option>
+          <option value="Concert">Concert</option>
+          <option value="Sale">Sale</option>
+          <option value="Class">Class</option>
+          <option value="Meetup">Meetup</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <label for="event-description">Description:</label>
+        <textarea id="event-description" placeholder="Event description"></textarea>
+
+        <label for="event-date">Event Date & Time:</label>
+        <input type="datetime-local" id="event-date" required>
+
+        <label for="event-location">Location:</label>
+        <input type="text" id="event-location" placeholder="Event location">
+
+        <label for="event-price">Price ($):</label>
+        <input type="number" id="event-price" placeholder="0.00" min="0" step="0.01">
+
+        <button id="btn-create-event" class="success" style="width: 100%;">Create Event</button>
+      </div>
+    </div>
 
     <hr>
-
-    <div style="max-width: 600px; margin: 0 auto;">
-      <h2 style="text-align: center;">Create New Event</h2>
-      
-      <label for="event-business">Link to Business (Optional):</label>
-      <select id="event-business">
-        <option value="">Loading businesses...</option>
-      </select>
-
-      <label for="event-title">Event Title:</label>
-      <input type="text" id="event-title" placeholder="Enter event title" required>
-
-      <label for="event-category">Category:</label>
-      <select id="event-category">
-        <option value="">Select a category</option>
-        <option value="Workshop">Workshop</option>
-        <option value="Concert">Concert</option>
-        <option value="Sale">Sale</option>
-        <option value="Class">Class</option>
-        <option value="Meetup">Meetup</option>
-        <option value="Other">Other</option>
-      </select>
-
-      <label for="event-description">Description:</label>
-      <textarea id="event-description" placeholder="Event description"></textarea>
-
-      <label for="event-date">Event Date & Time:</label>
-      <input type="datetime-local" id="event-date" required>
-
-      <label for="event-location">Location:</label>
-      <input type="text" id="event-location" placeholder="Event location">
-
-      <label for="event-price">Price ($):</label>
-      <input type="number" id="event-price" placeholder="0.00" min="0" step="0.01">
-
-      <button id="btn-create-event" class="success" style="width: 100%;">Create Event</button>
-    </div>
+    <p>Jinice (copyright 2026)</p>
   </div>
-
-  <hr>
-  <p>Jinice (copyright 2026)</p>
 </body>
 </html>
