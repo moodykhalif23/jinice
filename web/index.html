@@ -17,113 +17,48 @@
       border-bottom: 2px solid #333;
       padding-bottom: 10px;
     }
-    h2 {
-      margin-top: 30px;
-      color: #333;
+    .nav {
+      margin: 20px 0;
+      display: flex;
+      gap: 10px;
     }
-    button {
-      padding: 8px 16px;
-      margin: 5px 5px 5px 0;
-      cursor: pointer;
+    .nav a {
+      padding: 10px 20px;
       background-color: #007bff;
       color: white;
-      border: none;
+      text-decoration: none;
       border-radius: 4px;
     }
-    button:hover {
+    .nav a:hover {
       background-color: #0056b3;
     }
-    button.danger {
-      background-color: #dc3545;
-    }
-    button.danger:hover {
-      background-color: #c82333;
-    }
-    button.success {
+    .nav a.active {
       background-color: #28a745;
-    }
-    button.success:hover {
-      background-color: #218838;
-    }
-    input {
-      padding: 8px;
-      margin: 10px 0;
-      width: 100%;
-      max-width: 500px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    pre {
-      background-color: #f9f9f9;
-      border: 1px solid #ddd;
-      padding: 10px;
-      border-radius: 4px;
-      overflow-x: auto;
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-      font-weight: bold;
-    }
-    .item {
-      background-color: #f9f9f9;
-      border: 1px solid #ddd;
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 4px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .item button {
-      margin: 0 2px;
-      padding: 5px 10px;
-      font-size: 12px;
-    }
-    #stats-grid div {
-      margin: 10px 0;
-      padding: 10px;
-      background-color: #f9f9f9;
-      border-left: 3px solid #007bff;
     }
     hr {
       margin: 30px 0;
       border: none;
       border-top: 1px solid #ddd;
     }
-    .section {
-      margin-bottom: 20px;
-    }
   </style>
-  <script defer src="./app.js"></script>
 </head>
 <body>
-  <h1>Starterkit - Full Stack Demo</h1>
-  <p>Test your backend with real-world features!</p>
-
-  <h2>Todo Manager</h2>
-  <label for="todo-input">Add a new todo:</label>
-  <input type="text" id="todo-input" placeholder="Enter a todo..." >
-  <button id="btn-add-todo" class="success">Add Todo</button>
-  <div id="todos-list"></div>
-
-  <h2>User Management</h2>
-  <label for="user-name">Name:</label>
-  <input type="text" id="user-name" placeholder="Enter name">
-  <label for="user-email">Email:</label>
-  <input type="text" id="user-email" placeholder="Enter email">
-  <button id="btn-add-user" class="success">Add User</button>
-  <div id="users-list"></div>
-
-  <h2>Developer Tools</h2>
-  <button id="btn-health">Check /health</button>
-  <button id="btn-hello">Call /hello</button>
-  <button id="btn-time">Get /time</button>
-  <button id="btn-stats">Get /stats</button>
-  <h3>Result</h3>
-  <pre id="output-dev">(no calls yet)</pre>
+  <h1>Starterkit</h1>
+  <p>Choose your portal:</p>
+  
+  <div class="nav">
+    <a href="user.html" class="active">User Portal</a>
+    <a href="developer.html">Developer Portal</a>
+  </div>
 
   <hr>
-  <p>Note: The frontend calls <code>http://localhost:8080</code>. Make sure the Go server is running.</p>
+  <h2>Welcome to Starterkit</h2>
+  <p>This application demonstrates a full-stack demo with separate concerns for users and developers.</p>
+  
+  <h3>User Portal</h3>
+  <p>Manage todos and users with an intuitive interface.</p>
+  
+  <h3>Developer Portal</h3>
+  <p>Test and monitor API endpoints with developer tools.</p>
 </body>
 </html>

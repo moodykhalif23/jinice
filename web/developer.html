@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Developer Portal - Starterkit</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      border-bottom: 2px solid #333;
+      padding-bottom: 10px;
+    }
+    h2 {
+      margin-top: 30px;
+      color: #333;
+    }
+    .nav {
+      margin: 20px 0;
+      display: flex;
+      gap: 10px;
+    }
+    .nav a {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+    .nav a:hover {
+      background-color: #0056b3;
+    }
+    .nav a.active {
+      background-color: #28a745;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 5px 5px 5px 0;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    input {
+      padding: 8px;
+      margin: 10px 0;
+      width: 100%;
+      max-width: 500px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    pre {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .endpoint {
+      background-color: #f9f9f9;
+      border-left: 4px solid #007bff;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    .endpoint-title {
+      font-weight: bold;
+      color: #007bff;
+    }
+    hr {
+      margin: 30px 0;
+      border: none;
+      border-top: 1px solid #ddd;
+    }
+  </style>
+  <script defer src="./developer.js"></script>
+</head>
+<body>
+  <h1>Developer Portal</h1>
+  <p>Test and monitor your API endpoints</p>
+
+  <div class="nav">
+    <a href="user.html">User Portal</a>
+    <a href="developer.html" class="active">Developer Portal</a>
+    <a href="index.html">Home</a>
+  </div>
+
+  <h2>API Health & Monitoring</h2>
+  <div class="endpoint">
+    <div class="endpoint-title">GET /health</div>
+    <button onclick="callApi('health')">Check Health</button>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-title">GET /stats</div>
+    <button onclick="callApi('stats')">Get Statistics</button>
+  </div>
+
+  <h2>API Endpoints</h2>
+  
+  <div class="endpoint">
+    <div class="endpoint-title">GET /hello</div>
+    <button onclick="callApi('hello')">Call /hello</button>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-title">GET /time</div>
+    <button onclick="callApi('time')">Get Current Time</button>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-title">GET /todos</div>
+    <button onclick="callApi('todos')">Get All Todos</button>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-title">GET /users</div>
+    <button onclick="callApi('users')">Get All Users</button>
+  </div>
+
+  <h2>Response Output</h2>
+  <pre id="output">(no API calls yet)</pre>
+
+  <hr>
+  <p>Note: Make sure the backend server is running at <code>http://localhost:8080</code></p>
+</body>
+</html>
