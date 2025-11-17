@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Management Demo - Business Directory</title>
+    <link rel="stylesheet" href="image-manager.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .demo-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+
+        .demo-section h2 {
+            color: #2196F3;
+            margin-bottom: 15px;
+        }
+
+        .auth-section {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .auth-section p {
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #1976D2;
+        }
+
+        .btn-secondary {
+            background: #757575;
+        }
+
+        .btn-secondary:hover {
+            background: #616161;
+        }
+
+        .entity-selector {
+            margin-bottom: 20px;
+        }
+
+        .entity-selector label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .entity-selector select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📸 Image Management System</h1>
+        <p class="subtitle">Comprehensive photo support for businesses and events</p>
+
+        <div class="auth-section">
+            <p><strong>Authentication Status:</strong> <span id="auth-status">Not logged in</span></p>
+            <button class="btn" onclick="testLogin()">Test Login (Business Owner)</button>
+            <button class="btn-secondary btn" onclick="logout()">Logout</button>
+        </div>
+
+        <div class="demo-section">
+            <h2>Business Images</h2>
+            <div class="entity-selector">
+                <label for="business-select">Select Business:</label>
+                <select id="business-select" onchange="loadBusinessImages()">
+                    <option value="">-- Select a business --</option>
+                </select>
+            </div>
+            <div id="business-images"></div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Event Images</h2>
+            <div class="entity-selector">
+                <label for="event-select">Select Event:</label>
+                <select id="event-select" onchange="loadEventImages()">
+                    <option value="">-- Select an event --</option>
+                </select>
+            </div>
+            <div id="event-images"></div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Public Gallery View</h2>
+            <p style="margin-bottom: 15px;">This is how images appear to public users (no management features):</p>
+            <div id="public-gallery"></div>
+        </div>
+    </div>
+
+    <script src="image-manager.js"></script>
+    <script>
+        let businessImageManager = null;
+        let eventImageManager = null;
+        let publicGallery = null;
+
+        // Check auth status on load
+        window.addEventListener('DOMContentLoaded', () => {
+            checkAuthStatus();
+            loadBusinesses();
+            loadEvents();
+        });
+
+        function checkAuthStatus() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            if (token && user.email) {
+                document.getElementById('auth-status').textContent = 
+                    `Logged in as ${user.name} (${user.type})`;
+            } else {
+                document.getElementById('auth-status').textContent = 'Not logged in';
+            }
+        }
+
+        async function testLogin() {
+            try {
+                // Login as first business owner (from seed data)
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'john@coffee.com',
+                        password: 'password123'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    alert('Logged in successfully!');
+                    checkAuthStatus();
+                    loadBusinessImages();
+                } else {
+                    alert('Login failed. Make sure the database is seeded.');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Login error: ' + error.message);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            checkAuthStatus();
+            alert('Logged out');
+        }
+
+        async function loadBusinesses() {
+            try {
+                const response = await fetch('/businesses');
+                if (response.ok) {
+                    const businesses = await response.json();
+                    const select = document.getElementById('business-select');
+                    businesses.forEach(business => {
+                        const option = document.createElement('option');
+                        option.value = business.id;
+                        option.textContent = business.name;
+                        select.appendChild(option);
+                    });
+                    
+                    // Auto-select first business
+                    if (businesses.length > 0) {
+                        select.value = businesses[0].id;
+                        loadBusinessImages();
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading businesses:', error);
+            }
+        }
+
+        async function loadEvents() {
+            try {
+                const response = await fetch('/business-events');
+                if (response.ok) {
+                    const events = await response.json();
+                    const select = document.getElementById('event-select');
+                    events.forEach(event => {
+                        const option = document.createElement('option');
+                        option.value = event.id;
+                        option.textContent = event.title;
+                        select.appendChild(option);
+                    });
+                    
+                    // Auto-select first event
+                    if (events.length > 0) {
+                        select.value = events[0].id;
+                        loadEventImages();
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading events:', error);
+            }
+        }
+
+        function loadBusinessImages() {
+            const businessId = document.getElementById('business-select').value;
+            if (!businessId) return;
+
+            const token = localStorage.getItem('token');
+            const allowManagement = !!token;
+
+            if (businessImageManager) {
+                businessImageManager = null;
+            }
+
+            businessImageManager = new ImageManager('business', parseInt(businessId), 'business-images', {
+                allowUpload: allowManagement,
+                allowDelete: allowManagement,
+                allowReorder: allowManagement
+            });
+
+            // Also update public gallery
+            if (publicGallery) {
+                publicGallery = null;
+            }
+            publicGallery = new ImageGallery('business', parseInt(businessId), 'public-gallery');
+        }
+
+        function loadEventImages() {
+            const eventId = document.getElementById('event-select').value;
+            if (!eventId) return;
+
+            const token = localStorage.getItem('token');
+            const allowManagement = !!token;
+
+            if (eventImageManager) {
+                eventImageManager = null;
+            }
+
+            eventImageManager = new ImageManager('event', parseInt(eventId), 'event-images', {
+                allowUpload: allowManagement,
+                allowDelete: allowManagement,
+                allowReorder: allowManagement
+            });
+        }
+    </script>
+</body>
+</html>

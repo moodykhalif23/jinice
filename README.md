@@ -1,12 +1,14 @@
-# Business Directory Application
+# JiNice
 
-A full-stack business directory application with user authentication, business management, and analytics.
+A full-stack business directory and events platform with user authentication, business management, event management, and analytics.
 
 ## Features
 
 - **Secure Authentication**: JWT-based authentication with database-stored sessions
 - **User Management**: Business owner registration and login
 - **Business Management**: Create, read, update, and delete business listings
+- **Event Management**: Business owners can create and manage events for their businesses
+- **Public Event Browsing**: Users can discover upcoming events from local businesses
 - **Analytics**: Track business views and statistics
 - **Responsive UI**: Clean, modern interface for both public and business owner portals
 

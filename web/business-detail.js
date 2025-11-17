@@ -59,6 +59,11 @@ function displayBusinessDetails(business) {
         </div>
       </div>
 
+      <div class="image-section">
+        <h3>Photos</h3>
+        <div id="business-gallery"></div>
+      </div>
+
       <div class="business-description">
         ${business.description || 'No description available.'}
       </div>
@@ -88,6 +93,9 @@ function displayBusinessDetails(business) {
       </div>
     </div>
   `;
+
+  // Initialize image gallery after content is rendered
+  new ImageGallery('business', business.id, 'business-gallery');
 }
 
 function showError(message) {

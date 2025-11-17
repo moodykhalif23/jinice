@@ -24,7 +24,7 @@ var (
 	requestCount = 0
 	requestMutex sync.Mutex
 	startTime    = time.Now()
-	eventLog     = make([]Event, 0)
+	eventLog     = make([]SystemEvent, 0)
 	eventMutex   sync.Mutex
 )
 
@@ -147,6 +147,19 @@ func businessOwnerOnly(next http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
+// eventOwnerOnly middleware ensures only event owners can access
+func eventOwnerOnly(next http.HandlerFunc) http.HandlerFunc {
+	return authMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		userType := r.Header.Get("X-User-Type")
+		if userType != "event_owner" && userType != "business_owner" {
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{"error": "event owner or business owner access required"})
+			return
+		}
+		next(w, r)
+	})
+}
+
 type Business struct {
 	ID          int       `json:"id"`
 	Name        string    `json:"name"`
@@ -155,6 +168,7 @@ type Business struct {
 	Phone       string    `json:"phone"`
 	Email       string    `json:"email"`
 	Address     string    `json:"address"`
+	ImageURL    string    `json:"image_url,omitempty"`
 	Rating      float64   `json:"rating"`
 	CreatedAt   time.Time `json:"created_at"`
 	OwnerID     int       `json:"owner_id,omitempty"`
@@ -178,11 +192,25 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-type Event struct {
+type SystemEvent struct {
 	Type      string      `json:"type"`
 	Message   string      `json:"message"`
 	Data      interface{} `json:"data,omitempty"`
 	Timestamp time.Time   `json:"timestamp"`
+}
+
+type BusinessEvent struct {
+	ID          int       `json:"id"`
+	OwnerID     int       `json:"owner_id"`
+	BusinessID  *int      `json:"business_id,omitempty"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	EventDate   time.Time `json:"event_date"`
+	Location    string    `json:"location"`
+	ImageURL    string    `json:"image_url,omitempty"`
+	Price       float64   `json:"price"`
+	Category    string    `json:"category"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 func InitDB() error {
@@ -223,6 +251,11 @@ func InitDB() error {
 		return err
 	}
 
+	// Initialize image storage
+	if err = InitImageStorage(); err != nil {
+		log.Printf("Warning: Could not initialize image storage: %v", err)
+	}
+
 	// Seed initial data
 	if err = seedData(); err != nil {
 		log.Printf("Warning: Could not seed initial data: %v", err)
@@ -239,7 +272,7 @@ func createTables() error {
 			name VARCHAR(255) NOT NULL,
 			email VARCHAR(255) UNIQUE NOT NULL,
 			password VARCHAR(255) NOT NULL,
-			type ENUM('user', 'business_owner') NOT NULL DEFAULT 'user',
+			type ENUM('user', 'business_owner', 'event_owner') NOT NULL DEFAULT 'user',
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		)
 	`)
@@ -252,6 +285,19 @@ func createTables() error {
 		CREATE TABLE IF NOT EXISTS business_owners (
 			id INT PRIMARY KEY,
 			company VARCHAR(255),
+			phone VARCHAR(50),
+			FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE
+		)
+	`)
+	if err != nil {
+		return err
+	}
+
+	// Event owners additional info
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS event_owners (
+			id INT PRIMARY KEY,
+			organization VARCHAR(255),
 			phone VARCHAR(50),
 			FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE
 		)
@@ -308,6 +354,30 @@ func createTables() error {
 			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 			INDEX idx_sessions_token (token),
 			INDEX idx_sessions_expires_at (expires_at)
+		)
+	`)
+	if err != nil {
+		return err
+	}
+
+	// Events table
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS events (
+			id INT AUTO_INCREMENT PRIMARY KEY,
+			owner_id INT NOT NULL,
+			business_id INT,
+			title VARCHAR(255) NOT NULL,
+			description TEXT,
+			event_date DATETIME NOT NULL,
+			location VARCHAR(255),
+			price DECIMAL(10,2) DEFAULT 0,
+			category VARCHAR(100),
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+			FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE SET NULL,
+			INDEX idx_events_owner_id (owner_id),
+			INDEX idx_events_business_id (business_id),
+			INDEX idx_events_event_date (event_date)
 		)
 	`)
 	if err != nil {
@@ -439,9 +509,24 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("/my-businesses", corsMiddleware(businessOwnerOnly(getMyBusinessesHandler)))
 	mux.HandleFunc("/my-business-stats", corsMiddleware(businessOwnerOnly(getMyBusinessStatsHandler)))
 
+	// Event routes
+	mux.HandleFunc("/business-events", corsMiddleware(businessEventsRouter))
+	mux.HandleFunc("/event/", corsMiddleware(getEventByIDHandler))
+	mux.HandleFunc("/my-events", corsMiddleware(eventOwnerOnly(getMyEventsHandler)))
+
 	// Global stats (no auth required)
 	mux.HandleFunc("/stats", corsMiddleware(statsHandler))
-	mux.HandleFunc("/events", corsMiddleware(eventsHandler))
+	mux.HandleFunc("/system-events", corsMiddleware(systemEventsHandler))
+
+	// Image routes
+	mux.HandleFunc("/images", corsMiddleware(getImagesHandler))
+	mux.HandleFunc("/images/upload", corsMiddleware(authMiddleware(uploadImageHandler)))
+	mux.HandleFunc("/images/add-url", corsMiddleware(authMiddleware(addImageURLHandler)))
+	mux.HandleFunc("/images/update", corsMiddleware(authMiddleware(updateImageHandler)))
+	mux.HandleFunc("/images/delete", corsMiddleware(authMiddleware(deleteImageHandler)))
+
+	// Serve uploaded files
+	mux.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(uploadDir))))
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// Apply CORS for static files
@@ -490,6 +575,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		Name     string `json:"name"`
 		Email    string `json:"email"`
 		Password string `json:"password"`
+		Type     string `json:"type"` // "business_owner" or "event_owner"
 		Company  string `json:"company"`
 		Phone    string `json:"phone"`
 	}
@@ -514,9 +600,15 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Determine user type (default to business_owner for backward compatibility)
+	userType := "business_owner"
+	if req.Type != "" {
+		userType = req.Type
+	}
+
 	// Insert user
-	result, err := db.Exec("INSERT INTO users (name, email, password, type) VALUES (?, ?, ?, 'business_owner')",
-		req.Name, req.Email, hashedPassword)
+	result, err := db.Exec("INSERT INTO users (name, email, password, type) VALUES (?, ?, ?, ?)",
+		req.Name, req.Email, hashedPassword, userType)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "Duplicate entry") {
@@ -532,15 +624,30 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 
 	userID, _ := result.LastInsertId()
 
-	// Insert business owner info
-	_, err = db.Exec("INSERT INTO business_owners (id, company, phone) VALUES (?, ?, ?)",
-		userID, req.Company, req.Phone)
+	// Insert business owner info if type is business_owner
+	if userType == "business_owner" {
+		_, err = db.Exec("INSERT INTO business_owners (id, company, phone) VALUES (?, ?, ?)",
+			userID, req.Company, req.Phone)
 
-	if err != nil {
-		log.Printf("Error creating business owner: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "failed to create business owner profile"})
-		return
+		if err != nil {
+			log.Printf("Error creating business owner: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "failed to create business owner profile"})
+			return
+		}
+	}
+
+	// Insert event owner info if type is event_owner
+	if userType == "event_owner" {
+		_, err = db.Exec("INSERT INTO event_owners (id, organization, phone) VALUES (?, ?, ?)",
+			userID, req.Company, req.Phone)
+
+		if err != nil {
+			log.Printf("Error creating event owner: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "failed to create event owner profile"})
+			return
+		}
 	}
 
 	// Get the created user for response
@@ -672,7 +779,7 @@ func healthHandler(w http.ResponseWriter, _ *http.Request) {
 }
 
 func getBusinessesHandler(w http.ResponseWriter, _ *http.Request) {
-	rows, err := db.Query("SELECT id, name, category, description, phone, email, address, rating, created_at, owner_id FROM businesses ORDER BY created_at DESC")
+	rows, err := db.Query("SELECT id, name, category, description, phone, email, address, image_url, rating, created_at, owner_id FROM businesses ORDER BY created_at DESC")
 	if err != nil {
 		log.Printf("Error querying businesses: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -684,10 +791,14 @@ func getBusinessesHandler(w http.ResponseWriter, _ *http.Request) {
 	var businesses []Business
 	for rows.Next() {
 		var b Business
-		err := rows.Scan(&b.ID, &b.Name, &b.Category, &b.Description, &b.Phone, &b.Email, &b.Address, &b.Rating, &b.CreatedAt, &b.OwnerID)
+		var imageURL sql.NullString
+		err := rows.Scan(&b.ID, &b.Name, &b.Category, &b.Description, &b.Phone, &b.Email, &b.Address, &imageURL, &b.Rating, &b.CreatedAt, &b.OwnerID)
 		if err != nil {
 			log.Printf("Error scanning business: %v", err)
 			continue
+		}
+		if imageURL.Valid {
+			b.ImageURL = imageURL.String
 		}
 		businesses = append(businesses, b)
 	}
@@ -1094,7 +1205,7 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 
 func logEvent(eventType, message string, data interface{}) {
 	eventMutex.Lock()
-	event := Event{
+	event := SystemEvent{
 		Type:      eventType,
 		Message:   message,
 		Data:      data,
@@ -1107,11 +1218,486 @@ func logEvent(eventType, message string, data interface{}) {
 	eventMutex.Unlock()
 }
 
-func eventsHandler(w http.ResponseWriter, _ *http.Request) {
+func systemEventsHandler(w http.ResponseWriter, _ *http.Request) {
 	eventMutex.Lock()
-	events := make([]Event, len(eventLog))
+	events := make([]SystemEvent, len(eventLog))
 	copy(events, eventLog)
 	eventMutex.Unlock()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(events)
+}
+
+// Business Events Handlers
+
+func businessEventsRouter(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		// GET is public - no auth required
+		getBusinessEventsHandler(w, r)
+	case http.MethodPost:
+		// POST requires event owner or business owner auth
+		eventOwnerOnly(createBusinessEventHandler)(w, r)
+	case http.MethodPut:
+		// PUT requires event owner or business owner auth
+		eventOwnerOnly(updateBusinessEventHandler)(w, r)
+	case http.MethodDelete:
+		// DELETE requires event owner or business owner auth
+		eventOwnerOnly(deleteBusinessEventHandler)(w, r)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func getBusinessEventsHandler(w http.ResponseWriter, r *http.Request) {
+	// Get optional business_id filter
+	businessIDStr := r.URL.Query().Get("business_id")
+	
+	var rows *sql.Rows
+	var err error
+	
+	if businessIDStr != "" {
+		businessID, err := strconv.Atoi(businessIDStr)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "invalid business ID"})
+			return
+		}
+		rows, err = db.Query(`
+			SELECT id, owner_id, business_id, title, description, event_date, location, price, category, created_at
+			FROM events
+			WHERE business_id = ? AND event_date >= NOW()
+			ORDER BY event_date ASC
+		`, businessID)
+	} else {
+		rows, err = db.Query(`
+			SELECT id, owner_id, business_id, title, description, event_date, location, price, category, created_at
+			FROM events
+			WHERE event_date >= NOW()
+			ORDER BY event_date ASC
+		`)
+	}
+	
+	if err != nil {
+		log.Printf("Error querying events: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+		return
+	}
+	defer rows.Close()
+
+	var events []BusinessEvent
+	for rows.Next() {
+		var e BusinessEvent
+		var businessID sql.NullInt64
+		err := rows.Scan(&e.ID, &e.OwnerID, &businessID, &e.Title, &e.Description, &e.EventDate, &e.Location, &e.Price, &e.Category, &e.CreatedAt)
+		if err != nil {
+			log.Printf("Error scanning event: %v", err)
+			continue
+		}
+		if businessID.Valid {
+			bid := int(businessID.Int64)
+			e.BusinessID = &bid
+		}
+		events = append(events, e)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(events)
+}
+
+func createBusinessEventHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID := r.Header.Get("X-User-ID")
+	ownerID, err := strconv.Atoi(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid user ID"})
+		return
+	}
+
+	userType := r.Header.Get("X-User-Type")
+
+	var req struct {
+		BusinessID  *int    `json:"business_id"`
+		Title       string  `json:"title"`
+		Description string  `json:"description"`
+		EventDate   string  `json:"event_date"`
+		Location    string  `json:"location"`
+		Price       float64 `json:"price"`
+		Category    string  `json:"category"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid request"})
+		return
+	}
+
+	if req.Title == "" || req.EventDate == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "title and event_date are required"})
+		return
+	}
+
+	// If business_id is provided, verify ownership (only for business owners)
+	if req.BusinessID != nil && *req.BusinessID > 0 {
+		if userType == "business_owner" {
+			var businessOwnerID int
+			err = db.QueryRow("SELECT owner_id FROM businesses WHERE id = ?", *req.BusinessID).Scan(&businessOwnerID)
+			if err != nil {
+				if err == sql.ErrNoRows {
+					w.WriteHeader(http.StatusNotFound)
+					json.NewEncoder(w).Encode(map[string]string{"error": "business not found"})
+					return
+				}
+				log.Printf("Error checking business ownership: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+				return
+			}
+
+			if businessOwnerID != ownerID {
+				w.WriteHeader(http.StatusForbidden)
+				json.NewEncoder(w).Encode(map[string]string{"error": "you can only create events for your own businesses"})
+				return
+			}
+		} else {
+			// Event owners can't link to businesses they don't own
+			req.BusinessID = nil
+		}
+	}
+
+	// Parse event date
+	eventDate, err := time.Parse("2006-01-02T15:04", req.EventDate)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid event_date format, use YYYY-MM-DDTHH:MM"})
+		return
+	}
+
+	result, err := db.Exec(`
+		INSERT INTO events (owner_id, business_id, title, description, event_date, location, price, category)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, ownerID, req.BusinessID, req.Title, req.Description, eventDate, req.Location, req.Price, req.Category)
+
+	if err != nil {
+		log.Printf("Error creating event: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to create event"})
+		return
+	}
+
+	id, _ := result.LastInsertId()
+	event := BusinessEvent{
+		ID:          int(id),
+		OwnerID:     ownerID,
+		BusinessID:  req.BusinessID,
+		Title:       req.Title,
+		Description: req.Description,
+		EventDate:   eventDate,
+		Location:    req.Location,
+		Price:       req.Price,
+		Category:    req.Category,
+		CreatedAt:   time.Now(),
+	}
+
+	logEvent("event_created", "Event "+event.Title+" created", event)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(event)
+}
+
+func updateBusinessEventHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID := r.Header.Get("X-User-ID")
+	ownerID, err := strconv.Atoi(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid user ID"})
+		return
+	}
+
+	var req struct {
+		ID          int     `json:"id"`
+		Title       string  `json:"title"`
+		Description string  `json:"description"`
+		EventDate   string  `json:"event_date"`
+		Location    string  `json:"location"`
+		Price       float64 `json:"price"`
+		Category    string  `json:"category"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid request"})
+		return
+	}
+
+	// Verify event belongs to owner
+	var eventOwnerID int
+	err = db.QueryRow("SELECT owner_id FROM events WHERE id = ?", req.ID).Scan(&eventOwnerID)
+	
+	if err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "event not found"})
+			return
+		}
+		log.Printf("Error checking event ownership: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+		return
+	}
+
+	if eventOwnerID != ownerID {
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "you can only update your own events"})
+		return
+	}
+
+	// Build update query dynamically
+	setParts := []string{}
+	args := []interface{}{}
+
+	if req.Title != "" {
+		setParts = append(setParts, "title = ?")
+		args = append(args, req.Title)
+	}
+	if req.Description != "" {
+		setParts = append(setParts, "description = ?")
+		args = append(args, req.Description)
+	}
+	if req.EventDate != "" {
+		eventDate, err := time.Parse("2006-01-02T15:04", req.EventDate)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "invalid event_date format"})
+			return
+		}
+		setParts = append(setParts, "event_date = ?")
+		args = append(args, eventDate)
+	}
+	if req.Location != "" {
+		setParts = append(setParts, "location = ?")
+		args = append(args, req.Location)
+	}
+	if req.Price >= 0 {
+		setParts = append(setParts, "price = ?")
+		args = append(args, req.Price)
+	}
+	if req.Category != "" {
+		setParts = append(setParts, "category = ?")
+		args = append(args, req.Category)
+	}
+
+	if len(setParts) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "no valid fields to update"})
+		return
+	}
+
+	query := "UPDATE events SET " + setParts[0]
+	for i := 1; i < len(setParts); i++ {
+		query += ", " + setParts[i]
+	}
+	query += " WHERE id = ?"
+	args = append(args, req.ID)
+
+	_, err = db.Exec(query, args...)
+	if err != nil {
+		log.Printf("Error updating event: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to update event"})
+		return
+	}
+
+	// Get updated event
+	var event BusinessEvent
+	var businessID sql.NullInt64
+	err = db.QueryRow(`
+		SELECT id, owner_id, business_id, title, description, event_date, location, price, category, created_at
+		FROM events
+		WHERE id = ?
+	`, req.ID).Scan(&event.ID, &event.OwnerID, &businessID, &event.Title, &event.Description, &event.EventDate, &event.Location, &event.Price, &event.Category, &event.CreatedAt)
+	
+	if businessID.Valid {
+		bid := int(businessID.Int64)
+		event.BusinessID = &bid
+	}
+
+	if err != nil {
+		log.Printf("Error fetching updated event: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to fetch updated event"})
+		return
+	}
+
+	logEvent("event_updated", "Event "+event.Title+" updated", event)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(event)
+}
+
+func deleteBusinessEventHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID := r.Header.Get("X-User-ID")
+	ownerID, err := strconv.Atoi(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid user ID"})
+		return
+	}
+
+	var req struct {
+		ID int `json:"id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid request"})
+		return
+	}
+
+	// Get event before deletion for logging and verification
+	var event BusinessEvent
+	err = db.QueryRow("SELECT id, title, owner_id FROM events WHERE id = ?", req.ID).Scan(&event.ID, &event.Title, &event.OwnerID)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "event not found"})
+			return
+		}
+		log.Printf("Error fetching event for deletion: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+		return
+	}
+
+	if event.OwnerID != ownerID {
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "you can only delete your own events"})
+		return
+	}
+
+	_, err = db.Exec("DELETE FROM events WHERE id = ?", req.ID)
+	if err != nil {
+		log.Printf("Error deleting event: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to delete event"})
+		return
+	}
+
+	logEvent("event_deleted", "Event "+event.Title+" deleted", event)
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "event deleted successfully"})
+}
+
+func getEventByIDHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	idStr := strings.TrimPrefix(r.URL.Path, "/event/")
+	if idStr == r.URL.Path {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "event ID required"})
+		return
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid event ID"})
+		return
+	}
+
+	var event BusinessEvent
+	var businessID sql.NullInt64
+	err = db.QueryRow(`
+		SELECT id, owner_id, business_id, title, description, event_date, location, price, category, created_at
+		FROM events
+		WHERE id = ?
+	`, id).Scan(&event.ID, &event.OwnerID, &businessID, &event.Title, &event.Description, &event.EventDate, &event.Location, &event.Price, &event.Category, &event.CreatedAt)
+	
+	if businessID.Valid {
+		bid := int(businessID.Int64)
+		event.BusinessID = &bid
+	}
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "event not found"})
+			return
+		}
+		log.Printf("Error fetching event: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(event)
+}
+
+func getMyEventsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID := r.Header.Get("X-User-ID")
+	ownerID, err := strconv.Atoi(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid user ID"})
+		return
+	}
+
+	rows, err := db.Query(`
+		SELECT id, owner_id, business_id, title, description, event_date, location, price, category, created_at
+		FROM events
+		WHERE owner_id = ?
+		ORDER BY event_date ASC
+	`, ownerID)
+	
+	if err != nil {
+		log.Printf("Error querying user events: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+		return
+	}
+	defer rows.Close()
+
+	var events []BusinessEvent
+	for rows.Next() {
+		var e BusinessEvent
+		var businessID sql.NullInt64
+		err := rows.Scan(&e.ID, &e.OwnerID, &businessID, &e.Title, &e.Description, &e.EventDate, &e.Location, &e.Price, &e.Category, &e.CreatedAt)
+		if err != nil {
+			log.Printf("Error scanning event: %v", err)
+			continue
+		}
+		if businessID.Valid {
+			bid := int(businessID.Int64)
+			e.BusinessID = &bid
+		}
+		events = append(events, e)
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(events)
