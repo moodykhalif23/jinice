@@ -8,7 +8,7 @@
     body {
       font-family: Arial, sans-serif;
       line-height: 1.6;
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
       padding: 20px;
       background-color: #f5f5f5;
@@ -33,6 +33,18 @@
     button:hover {
       background-color: #0056b3;
     }
+    button.danger {
+      background-color: #dc3545;
+    }
+    button.danger:hover {
+      background-color: #c82333;
+    }
+    button.success {
+      background-color: #28a745;
+    }
+    button.success:hover {
+      background-color: #218838;
+    }
     input {
       padding: 8px;
       margin: 10px 0;
@@ -53,8 +65,20 @@
       margin-top: 10px;
       font-weight: bold;
     }
-    #stats-grid {
-      margin: 15px 0;
+    .item {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .item button {
+      margin: 0 2px;
+      padding: 5px 10px;
+      font-size: 12px;
     }
     #stats-grid div {
       margin: 10px 0;
@@ -67,43 +91,37 @@
       border: none;
       border-top: 1px solid #ddd;
     }
+    .section {
+      margin-bottom: 20px;
+    }
   </style>
   <script defer src="./app.js"></script>
 </head>
 <body>
-  <h1>Starterkit</h1>
-  <p>Test your backend with these endpoints!</p>
+  <h1>Starterkit - Full Stack Demo</h1>
+  <p>Test your backend with real-world features!</p>
 
-  <h2>Basic Endpoints</h2>
+  <h2>Todo Manager</h2>
+  <label for="todo-input">Add a new todo:</label>
+  <input type="text" id="todo-input" placeholder="Enter a todo..." >
+  <button id="btn-add-todo" class="success">Add Todo</button>
+  <div id="todos-list"></div>
+
+  <h2>User Management</h2>
+  <label for="user-name">Name:</label>
+  <input type="text" id="user-name" placeholder="Enter name">
+  <label for="user-email">Email:</label>
+  <input type="text" id="user-email" placeholder="Enter email">
+  <button id="btn-add-user" class="success">Add User</button>
+  <div id="users-list"></div>
+
+  <h2>Developer Tools</h2>
   <button id="btn-health">Check /health</button>
   <button id="btn-hello">Call /hello</button>
-  <h3>Result</h3>
-  <pre id="output-basic">(no calls yet)</pre>
-
-  <h2>Server Time</h2>
   <button id="btn-time">Get /time</button>
-  <pre id="output-time">(no calls yet)</pre>
-
-  <h2>Echo Service</h2>
-  <label for="echo-input">JSON Input:</label>
-  <input type="text" id="echo-input" placeholder='{"message": "Hello", "value": 42}' value='{"message": "Hello, Backend!", "value": 42}'>
-  <button id="btn-echo">Send Echo</button>
-  <pre id="output-echo">(no calls yet)</pre>
-
-  <h2>Server Statistics</h2>
   <button id="btn-stats">Get /stats</button>
-  <div id="stats-grid">
-    <div>
-      <strong>Total Requests:</strong> <span id="stat-requests">-</span>
-    </div>
-    <div>
-      <strong>Uptime (seconds):</strong> <span id="stat-uptime">-</span>
-    </div>
-    <div>
-      <strong>Start Time:</strong> <span id="stat-start">-</span>
-    </div>
-  </div>
-  <pre id="output-stats">(no calls yet)</pre>
+  <h3>Result</h3>
+  <pre id="output-dev">(no calls yet)</pre>
 
   <hr>
   <p>Note: The frontend calls <code>http://localhost:8080</code>. Make sure the Go server is running.</p>
