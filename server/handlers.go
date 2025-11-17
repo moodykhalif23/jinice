@@ -1,8 +1,10 @@
 package server
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -12,16 +14,138 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
 	db           *sql.DB
+	jwtSecret    = generateJWTSecret()
 	requestCount = 0
 	requestMutex sync.Mutex
 	startTime    = time.Now()
 	eventLog     = make([]Event, 0)
 	eventMutex   sync.Mutex
 )
+
+// generateJWTSecret generates a random JWT secret key
+func generateJWTSecret() []byte {
+	key := make([]byte, 32)
+	if _, err := rand.Read(key); err != nil {
+		// Fallback to a static key if random generation fails
+		key = []byte("fallback-secret-key-change-in-production-12345678")
+	}
+	return key
+}
+
+// hashPassword hashes a password using bcrypt
+func hashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes), err
+}
+
+// checkPasswordHash checks if a password matches its hash
+func checkPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
+// generateToken generates a JWT token for a user and stores it in the database
+func generateToken(user User) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": user.ID,
+		"email":   user.Email,
+		"type":    user.Type,
+		"exp":     time.Now().Add(time.Hour * 24).Unix(), // 24 hours
+	})
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return "", err
+	}
+
+	// Store token in database
+	expiresAt := time.Now().Add(time.Hour * 24)
+	_, err = db.Exec("INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)",
+		user.ID, tokenString, expiresAt)
+	if err != nil {
+		log.Printf("Error storing session: %v", err)
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+// authenticateUser verifies JWT token from database and returns user claims
+func authenticateToken(r *http.Request) (jwt.MapClaims, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		return nil, fmt.Errorf("authorization header required")
+	}
+
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+	// Check if token exists in database and is not expired
+	var userID int
+	var expiresAt time.Time
+	err := db.QueryRow("SELECT user_id, expires_at FROM sessions WHERE token = ? AND expires_at > NOW()",
+		tokenString).Scan(&userID, &expiresAt)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("invalid or expired token")
+		}
+		return nil, err
+	}
+
+	// Verify JWT signature
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return jwtSecret, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, fmt.Errorf("invalid token")
+}
+
+// authMiddleware wraps handlers to require authentication
+func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims, err := authenticateToken(r)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": "unauthorized"})
+			return
+		}
+
+		// Store claims in request context for handlers to use
+		r.Header.Set("X-User-ID", fmt.Sprintf("%.0f", claims["user_id"]))
+		r.Header.Set("X-User-Type", claims["type"].(string))
+
+		next(w, r)
+	}
+}
+
+// businessOwnerOnly middleware ensures only business owners can access
+func businessOwnerOnly(next http.HandlerFunc) http.HandlerFunc {
+	return authMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		userType := r.Header.Get("X-User-Type")
+		if userType != "business_owner" {
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{"error": "business owner access required"})
+			return
+		}
+		next(w, r)
+	})
+}
 
 type Business struct {
 	ID          int       `json:"id"`
@@ -156,6 +280,40 @@ func createTables() error {
 		return err
 	}
 
+	// Business views table for observability
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS business_views (
+			id INT AUTO_INCREMENT PRIMARY KEY,
+			business_id INT NOT NULL,
+			user_ip VARCHAR(45),
+			user_agent TEXT,
+			viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE,
+			INDEX idx_business_views_business_id (business_id),
+			INDEX idx_business_views_viewed_at (viewed_at)
+		)
+	`)
+	if err != nil {
+		return err
+	}
+
+	// Sessions table for storing auth tokens
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS sessions (
+			id INT AUTO_INCREMENT PRIMARY KEY,
+			user_id INT NOT NULL,
+			token VARCHAR(500) NOT NULL UNIQUE,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			expires_at TIMESTAMP NOT NULL,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+			INDEX idx_sessions_token (token),
+			INDEX idx_sessions_expires_at (expires_at)
+		)
+	`)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -205,8 +363,14 @@ func seedData() error {
 
 	// Insert business owners and their businesses
 	for i, owner := range businessOwners {
+		hashedPassword, err := hashPassword("password123")
+		if err != nil {
+			log.Printf("Error hashing password for %s: %v", owner.name, err)
+			continue
+		}
+
 		result, err := db.Exec("INSERT INTO users (name, email, password, type) VALUES (?, ?, ?, 'business_owner')",
-			owner.name, owner.email, "password123")
+			owner.name, owner.email, hashedPassword)
 
 		if err != nil {
 			log.Printf("Error seeding user %s: %v", owner.name, err)
@@ -243,7 +407,7 @@ func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
@@ -261,10 +425,21 @@ func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 func NewRouter() http.Handler {
 	mux := http.NewServeMux()
 
+	// Auth routes (no auth required)
+	mux.HandleFunc("/register", corsMiddleware(registerHandler))
+	mux.HandleFunc("/login", corsMiddleware(loginHandler))
+	mux.HandleFunc("/logout", corsMiddleware(authMiddleware(logoutHandler)))
+
 	// API routes
 	mux.HandleFunc("/health", corsMiddleware(healthHandler))
+
+	// Business routes
 	mux.HandleFunc("/businesses", corsMiddleware(businessesRouter))
 	mux.HandleFunc("/business/", corsMiddleware(getBusinessByIDHandler))
+	mux.HandleFunc("/my-businesses", corsMiddleware(businessOwnerOnly(getMyBusinessesHandler)))
+	mux.HandleFunc("/my-business-stats", corsMiddleware(businessOwnerOnly(getMyBusinessStatsHandler)))
+
+	// Global stats (no auth required)
 	mux.HandleFunc("/stats", corsMiddleware(statsHandler))
 	mux.HandleFunc("/events", corsMiddleware(eventsHandler))
 
@@ -272,7 +447,7 @@ func NewRouter() http.Handler {
 		// Apply CORS for static files
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
@@ -289,16 +464,206 @@ func NewRouter() http.Handler {
 func businessesRouter(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
+		// GET is public - no auth required
 		getBusinessesHandler(w, r)
 	case http.MethodPost:
-		createBusinessHandler(w, r)
+		// POST requires business owner auth
+		businessOwnerOnly(createBusinessHandler)(w, r)
 	case http.MethodPut:
-		updateBusinessHandler(w, r)
+		// PUT requires business owner auth
+		businessOwnerOnly(updateBusinessHandler)(w, r)
 	case http.MethodDelete:
-		deleteBusinessHandler(w, r)
+		// DELETE requires business owner auth
+		businessOwnerOnly(deleteBusinessHandler)(w, r)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
+}
+
+func registerHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Name     string `json:"name"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+		Company  string `json:"company"`
+		Phone    string `json:"phone"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid request"})
+		return
+	}
+
+	if req.Name == "" || req.Email == "" || req.Password == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "name, email, and password are required"})
+		return
+	}
+
+	// Hash the password
+	hashedPassword, err := hashPassword(req.Password)
+	if err != nil {
+		log.Printf("Error hashing password: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+		return
+	}
+
+	// Insert user
+	result, err := db.Exec("INSERT INTO users (name, email, password, type) VALUES (?, ?, ?, 'business_owner')",
+		req.Name, req.Email, hashedPassword)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "Duplicate entry") {
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(map[string]string{"error": "email already exists"})
+			return
+		}
+		log.Printf("Error creating user: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to create user"})
+		return
+	}
+
+	userID, _ := result.LastInsertId()
+
+	// Insert business owner info
+	_, err = db.Exec("INSERT INTO business_owners (id, company, phone) VALUES (?, ?, ?)",
+		userID, req.Company, req.Phone)
+
+	if err != nil {
+		log.Printf("Error creating business owner: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to create business owner profile"})
+		return
+	}
+
+	// Get the created user for response
+	var user User
+	err = db.QueryRow("SELECT id, name, email, type, created_at FROM users WHERE id = ?", userID).
+		Scan(&user.ID, &user.Name, &user.Email, &user.Type, &user.CreatedAt)
+
+	if err != nil {
+		log.Printf("Error fetching created user: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "user created but could not retrieve"})
+		return
+	}
+
+	// Generate JWT token and store in database
+	token, err := generateToken(user)
+	if err != nil {
+		log.Printf("Error generating token: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to generate token"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"user":    user,
+		"token":   token,
+		"message": "User registered successfully",
+	})
+}
+
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid request"})
+		return
+	}
+
+	if req.Email == "" || req.Password == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "email and password are required"})
+		return
+	}
+
+	// Get user from database
+	var user User
+	err := db.QueryRow("SELECT id, name, email, password, type, created_at FROM users WHERE email = ?", req.Email).
+		Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Type, &user.CreatedAt)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": "invalid credentials"})
+			return
+		}
+		log.Printf("Error fetching user: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+		return
+	}
+
+	// Check password
+	if !checkPasswordHash(req.Password, user.Password) {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid credentials"})
+		return
+	}
+
+	// Generate JWT token and store in database
+	token, err := generateToken(user)
+	if err != nil {
+		log.Printf("Error generating token: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to generate token"})
+		return
+	}
+
+	// Don't send password in response
+	user.Password = ""
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"user":  user,
+		"token": token,
+	})
+}
+
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "authorization header required"})
+		return
+	}
+
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+	// Delete token from database
+	_, err := db.Exec("DELETE FROM sessions WHERE token = ?", tokenString)
+	if err != nil {
+		log.Printf("Error deleting session: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to logout"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "logged out successfully"})
 }
 
 func healthHandler(w http.ResponseWriter, _ *http.Request) {
@@ -337,6 +702,14 @@ func createBusinessHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID := r.Header.Get("X-User-ID")
+	ownerID, err := strconv.Atoi(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid user ID"})
+		return
+	}
+
 	var req struct {
 		Name        string  `json:"name"`
 		Category    string  `json:"category"`
@@ -345,7 +718,6 @@ func createBusinessHandler(w http.ResponseWriter, r *http.Request) {
 		Email       string  `json:"email"`
 		Address     string  `json:"address"`
 		Rating      float64 `json:"rating"`
-		OwnerID     *int    `json:"owner_id,omitempty"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -360,7 +732,7 @@ func createBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, err := db.Exec("INSERT INTO businesses (name, category, description, phone, email, address, rating, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-		req.Name, req.Category, req.Description, req.Phone, req.Email, req.Address, req.Rating, req.OwnerID)
+		req.Name, req.Category, req.Description, req.Phone, req.Email, req.Address, req.Rating, ownerID)
 
 	if err != nil {
 		log.Printf("Error creating business: %v", err)
@@ -380,9 +752,7 @@ func createBusinessHandler(w http.ResponseWriter, r *http.Request) {
 		Address:     req.Address,
 		Rating:      req.Rating,
 		CreatedAt:   time.Now(),
-	}
-	if req.OwnerID != nil {
-		business.OwnerID = *req.OwnerID
+		OwnerID:     ownerID,
 	}
 
 	logEvent("business_created", "Business "+business.Name+" added to directory", business)
@@ -574,8 +944,137 @@ func getBusinessByIDHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Track business view (optional - don't fail if it errors)
+	userIP := r.RemoteAddr
+	userAgent := r.UserAgent()
+	_, _ = db.Exec("INSERT INTO business_views (business_id, user_ip, user_agent) VALUES (?, ?, ?)", id, userIP, userAgent)
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(business)
+}
+
+func getMyBusinessesHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID := r.Header.Get("X-User-ID")
+	ownerID, err := strconv.Atoi(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid user ID"})
+		return
+	}
+
+	rows, err := db.Query("SELECT id, name, category, description, phone, email, address, rating, created_at, owner_id FROM businesses WHERE owner_id = ? ORDER BY created_at DESC", ownerID)
+	if err != nil {
+		log.Printf("Error querying user businesses: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+		return
+	}
+	defer rows.Close()
+
+	var businesses []Business
+	for rows.Next() {
+		var b Business
+		err := rows.Scan(&b.ID, &b.Name, &b.Category, &b.Description, &b.Phone, &b.Email, &b.Address, &b.Rating, &b.CreatedAt, &b.OwnerID)
+		if err != nil {
+			log.Printf("Error scanning business: %v", err)
+			continue
+		}
+		businesses = append(businesses, b)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(businesses)
+}
+
+func getMyBusinessStatsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID := r.Header.Get("X-User-ID")
+	ownerID, err := strconv.Atoi(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid user ID"})
+		return
+	}
+
+	// Get business count
+	var businessCount int
+	err = db.QueryRow("SELECT COUNT(*) FROM businesses WHERE owner_id = ?", ownerID).Scan(&businessCount)
+	if err != nil {
+		log.Printf("Error counting businesses: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+		return
+	}
+
+	// Get total views for all owner's businesses
+	var totalViews int
+	err = db.QueryRow("SELECT COUNT(*) FROM business_views WHERE business_id IN (SELECT id FROM businesses WHERE owner_id = ?)", ownerID).Scan(&totalViews)
+	if err != nil {
+		log.Printf("Error counting business views: %v", err)
+		totalViews = 0 // Don't fail request if views table is unavailable
+	}
+
+	// Get average rating
+	var avgRating sql.NullFloat64
+	err = db.QueryRow("SELECT AVG(rating) FROM businesses WHERE owner_id = ? AND rating > 0", ownerID).Scan(&avgRating)
+	if err != nil {
+		log.Printf("Error calculating average rating: %v", err)
+	}
+
+	// Get views per business
+	rows, err := db.Query(`
+		SELECT b.id, b.name, COUNT(bv.id) as view_count
+		FROM businesses b
+		LEFT JOIN business_views bv ON b.id = bv.business_id
+		WHERE b.owner_id = ?
+		GROUP BY b.id, b.name
+		ORDER BY view_count DESC
+	`, ownerID)
+	if err != nil {
+		log.Printf("Error querying business views: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+		return
+	}
+	defer rows.Close()
+
+	var businessViews []map[string]interface{}
+	for rows.Next() {
+		var b map[string]interface{}
+		var id int
+		var name string
+		var viewCount int
+		err := rows.Scan(&id, &name, &viewCount)
+		if err != nil {
+			log.Printf("Error scanning business view: %v", err)
+			continue
+		}
+		b = map[string]interface{}{
+			"id":         id,
+			"name":       name,
+			"view_count": viewCount,
+		}
+		businessViews = append(businessViews, b)
+	}
+
+	resp := map[string]interface{}{
+		"business_count": businessCount,
+		"total_views":    totalViews,
+		"average_rating": avgRating.Float64,
+		"business_views": businessViews,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {

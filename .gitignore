@@ -22,6 +22,7 @@ Thumbs.db
 *.test
 *.out
 vendor/
+migrations/
 
 # Docker
 docker-compose.override.yml

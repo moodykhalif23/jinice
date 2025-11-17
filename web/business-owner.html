@@ -191,13 +191,63 @@
 </head>
 <body>
   <h1>Business Owner Portal</h1>
-  <p>Manage your business listings and monitor performance</p>
+  <p id="user-status">Manage your business listings and monitor performance</p>
 
   <div class="nav">
     <a href="user.html">Business Directory</a>
     <a href="business-owner.html" class="active">Business Owner Portal</a>
     <a href="index.html">Home</a>
+    <div id="auth-buttons" style="margin-left: auto; display: flex; gap: 10px;">
+      <button id="show-login-nav" class="secondary" style="display: inline-block;">Login</button>
+      <button id="show-register-nav" class="secondary" style="display: inline-block;">Sign Up</button>
+      <button id="logout-nav" class="danger" style="display: none;">Logout</button>
+    </div>
   </div>
+
+  <!-- Login Form (shown when not logged in) -->
+  <div id="login-container">
+    <h2>Login</h2>
+    <form id="login-form">
+      <label for="login-email">Email:</label>
+      <input type="email" id="login-email" placeholder="Enter your email" required>
+
+      <label for="login-password">Password:</label>
+      <input type="password" id="login-password" placeholder="Enter your password" required>
+
+      <button type="submit" class="success">Login</button>
+      <button type="button" id="show-register" class="secondary">New? Register</button>
+    </form>
+  </div>
+
+  <!-- Register Form (shown when registering) -->
+  <div id="register-container" style="display: none;">
+    <h2>Register as Business Owner</h2>
+    <form id="register-form">
+      <label for="register-name">Full Name:</label>
+      <input type="text" id="register-name" placeholder="Enter your full name" required>
+
+      <label for="register-email">Email:</label>
+      <input type="email" id="register-email" placeholder="Enter your email" required>
+
+      <label for="register-password">Password:</label>
+      <input type="password" id="register-password" placeholder="Enter your password" required>
+
+      <label for="register-company">Company Name:</label>
+      <input type="text" id="register-company" placeholder="Company or business name">
+
+      <label for="register-phone">Phone:</label>
+      <input type="tel" id="register-phone" placeholder="Contact phone number">
+
+      <button type="submit" class="success">Register</button>
+      <button type="button" id="show-login" class="secondary">Already have account? Login</button>
+    </form>
+  </div>
+
+  <!-- Main Dashboard (shown when logged in) -->
+  <div id="dashboard" style="display: none;">
+    <div style="text-align: right; margin-bottom: 20px;">
+      <button id="logout-btn" class="danger">Logout</button>
+    </div>
 
   <h2>Business Statistics</h2>
   <div class="stats-grid" id="stats-grid">
@@ -211,7 +261,7 @@
     </div>
     <div class="stat-card">
       <h3 id="total-views">0</h3>
-      <p>Total API Requests</p>
+      <p>Total Views</p>
     </div>
     <div class="stat-card">
       <h3 id="uptime">0s</h3>
