@@ -23,33 +23,136 @@ function filterBusinesses() {
     ? allBusinesses.filter(business => business.category === filterValue)
     : allBusinesses;
 
-    if (filteredBusinesses.length > 0) {
+  if (filteredBusinesses.length > 0) {
     filteredBusinesses.forEach(business => {
       const card = document.createElement('a');
       card.className = 'business-card';
       card.href = `business-detail.html?id=${business.id}`;
       const rating = business.rating ? `${business.rating}★` : 'No rating';
-      const thumbHtml = business.image_url ? `<img class="card-thumb" src="${business.image_url}" alt="${business.name} thumbnail" loading="lazy">` : '';
+      
+      // Handle multiple images or single image
+      let imageHtml = '';
+      if (business.images && business.images.length > 0) {
+        imageHtml = createCarouselHtml(business.images);
+      } else if (business.image_url) {
+        imageHtml = `<img class="card-thumb" src="${business.image_url}" alt="${business.name} thumbnail" loading="lazy">`;
+      } else {
+        imageHtml = '<div class="card-thumb" style="background-color: #e9ecef; display: flex; align-items: center; justify-content: center; color: #999;">No image</div>';
+      }
+
       card.innerHTML = `
-        ${thumbHtml}
-        <h3>${business.name}</h3>
-        <span class="category">${business.category}</span>
-        <div class="rating">${rating}</div>
-        <div class="description">${business.description}</div>
-        <div class="contact-info">
-          <div><strong>Phone:</strong> <span>${business.phone || 'N/A'}</span></div>
-          <div><strong>Email:</strong> <span>${business.email || 'N/A'}</span></div>
-          <div><strong>Address:</strong> ${business.address}</div>
+        ${imageHtml}
+        <div class="card-body">
+          <h3>${business.name}</h3>
+          <span class="category">${business.category}</span>
+          <div class="rating">${rating}</div>
+          <div class="description">${business.description}</div>
+          <div class="contact-info">
+            <div><strong>📞</strong> ${business.phone || 'N/A'}</div>
+            <div><strong>📧</strong> ${business.email || 'N/A'}</div>
+            <div><strong>📍</strong> ${business.address}</div>
+          </div>
         </div>
       `;
       list.appendChild(card);
     });
+
+    // Initialize carousels after rendering
+    setTimeout(initializeCarousels, 0);
   } else {
     const message = filterValue
       ? `No businesses found in "${filterValue}" category.`
       : 'No businesses in directory yet. Be the first to add one!';
     list.innerHTML = `<div class="no-businesses">${message}</div>`;
   }
+}
+
+function createCarouselHtml(images) {
+  if (!images || images.length === 0) {
+    return '<div class="card-thumb" style="background-color: #e9ecef; display: flex; align-items: center; justify-content: center; color: #999;">No image</div>';
+  }
+
+  if (images.length === 1) {
+    return `<img class="card-thumb" src="${images[0]}" alt="Image" loading="lazy">`;
+  }
+
+  const carouselId = 'carousel-' + Math.random().toString(36).substr(2, 9);
+  
+  return `
+    <div class="card-image-carousel" data-carousel-id="${carouselId}">
+      <div class="card-carousel-track">
+        ${images.map(img => `<img class="card-carousel-image" src="${img}" alt="Image" loading="lazy">`).join('')}
+      </div>
+      <button class="card-carousel-btn prev" aria-label="Previous image">‹</button>
+      <button class="card-carousel-btn next" aria-label="Next image">›</button>
+      <div class="card-carousel-indicators">
+        ${images.map((_, i) => `<div class="card-carousel-dot ${i === 0 ? 'active' : ''}"></div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function initializeCarousels() {
+  const carousels = document.querySelectorAll('.card-image-carousel');
+  carousels.forEach(carousel => {
+    const images = Array.from(carousel.querySelectorAll('.card-carousel-image'));
+    if (images.length <= 1) return;
+
+    let currentIndex = 0;
+    const track = carousel.querySelector('.card-carousel-track');
+    const prevBtn = carousel.querySelector('.card-carousel-btn.prev');
+    const nextBtn = carousel.querySelector('.card-carousel-btn.next');
+    const dots = carousel.querySelectorAll('.card-carousel-dot');
+
+    const updateCarousel = () => {
+      track.style.transform = `translateX(-${currentIndex * 100}%)`;
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === currentIndex);
+      });
+    };
+
+    const goToNext = () => {
+      currentIndex = (currentIndex + 1) % images.length;
+      updateCarousel();
+    };
+
+    const goToPrev = () => {
+      currentIndex = (currentIndex - 1 + images.length) % images.length;
+      updateCarousel();
+    };
+
+    prevBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      goToPrev();
+    });
+
+    nextBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      goToNext();
+    });
+
+    dots.forEach((dot, i) => {
+      dot.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        currentIndex = i;
+        updateCarousel();
+      });
+    });
+
+    // Auto-play
+    let autoPlayInterval = setInterval(goToNext, 4000);
+
+    carousel.addEventListener('mouseenter', () => {
+      clearInterval(autoPlayInterval);
+    });
+
+    carousel.addEventListener('mouseleave', () => {
+      autoPlayInterval = setInterval(goToNext, 4000);
+    });
+  });
 }
 
 function deleteBusiness(id) {

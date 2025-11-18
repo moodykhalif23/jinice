@@ -221,16 +221,18 @@ label {
 
 /* Business Cards */
 .business-card {
-  display: block;
+  display: flex;
+  flex-direction: column;
   background-color: white;
   border: 1px solid #ddd;
   border-radius: 8px;
-  padding: 16px;
+  padding: 0;
   margin: 12px 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
   text-decoration: none;
   color: inherit;
+  overflow: hidden;
 }
 
 .business-card:hover {
@@ -267,6 +269,11 @@ label {
   font-size: 14px;
   margin-bottom: 8px;
   line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .business-card .contact-info {
@@ -278,13 +285,18 @@ label {
 
 /* Event Cards */
 .event-card {
+  display: flex;
+  flex-direction: column;
   background-color: white;
   border: 1px solid #ddd;
   border-radius: 8px;
-  padding: 20px;
+  padding: 0;
   margin: 16px 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
 }
 
 .event-card:hover {
@@ -296,13 +308,97 @@ label {
   opacity: 0.6;
 }
 
-/* Thumbnail used on event and business cards */
+/* Image Carousel Container */
+.card-image-carousel {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  background-color: #f0f0f0;
+}
+
+.card-carousel-track {
+  display: flex;
+  transition: transform 0.3s ease;
+  height: 100%;
+}
+
+.card-carousel-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.card-carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: background-color 0.2s;
+  z-index: 2;
+  padding: 0;
+  margin: 0;
+}
+
+.card-carousel-btn:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.card-carousel-btn.prev {
+  left: 8px;
+}
+
+.card-carousel-btn.next {
+  right: 8px;
+}
+
+.card-carousel-indicators {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 2;
+}
+
+.card-carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  transition: background-color 0.2s;
+}
+
+.card-carousel-dot.active {
+  background-color: rgba(255, 255, 255, 1);
+}
+
+/* Thumbnail used on event and business cards (fallback for single image) */
 .card-thumb {
   width: 100%;
-  height: 140px;
+  height: 200px;
   object-fit: cover;
-  border-radius: 6px;
-  margin-bottom: 12px;
+  display: block;
+}
+
+/* Card body with padding */
+.card-body {
+  padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .event-card h3 {
@@ -337,6 +433,11 @@ label {
   font-size: 14px;
   margin: 12px 0;
   line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .event-details {
@@ -375,13 +476,15 @@ label {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
+  margin: 20px 0;
 }
 
 /* Events Grid */
 .events-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 16px;
+  margin: 20px 0;
 }
 
 /* Stats Grid */
@@ -614,7 +717,7 @@ hr {
 
   .business-card,
   .event-card {
-    padding: 12px;
+    padding: 0;
   }
 
   .filter-bar {
@@ -629,6 +732,91 @@ hr {
 
   .stat-card {
     padding: 15px;
+  }
+
+  /* Keep vertical card layout on small screens for better UX */
+  .card-body {
+    padding: 12px;
+  }
+
+  .business-card h3,
+  .event-card h3 {
+    font-size: 0.95rem;
+    margin: 0 0 6px 0;
+    line-height: 1.2;
+  }
+
+  .description,
+  .event-description {
+    font-size: 13px;
+    color: #666;
+    margin: 6px 0;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-image-carousel {
+    height: 160px;
+  }
+
+  .card-thumb {
+    height: 160px;
+  }
+
+  .contact-info,
+  .event-details {
+    font-size: 12px;
+    color: #555;
+  }
+
+  .contact-info div {
+    margin-bottom: 4px;
+  }
+
+  .category {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+
+  .rating {
+    font-size: 13px;
+  }
+
+  /* Make event-meta badges wrap more compactly */
+  .event-date,
+  .event-category,
+  .event-price {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  /* Smaller carousel buttons on mobile */
+  .card-carousel-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+
+  .card-carousel-btn.prev {
+    left: 6px;
+  }
+
+  .card-carousel-btn.next {
+    right: 6px;
+  }
+
+  .card-carousel-indicators {
+    bottom: 6px;
+  }
+
+  .card-carousel-dot {
+    width: 6px;
+    height: 6px;
   }
 }
 
