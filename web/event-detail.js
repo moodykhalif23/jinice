@@ -56,6 +56,34 @@ function displayEvent(event) {
     : 'FREE';
   const priceClass = event.price > 0 ? 'meta-price' : 'meta-price free';
 
+  // Handle images
+  let imagesHtml = '';
+  let imagesToUse = [];
+  
+  if (event.images && Array.isArray(event.images) && event.images.length > 0) {
+    imagesToUse = event.images;
+  } else if (event.image_urls && Array.isArray(event.image_urls) && event.image_urls.length > 0) {
+    imagesToUse = event.image_urls;
+  } else if (event.image_url) {
+    imagesToUse = [event.image_url];
+  }
+  
+  if (imagesToUse.length > 0) {
+    imagesHtml = `
+      <div class="detail-images">
+        ${imagesToUse.map((img, idx) => `
+          <img src="${img}" alt="${escapeHtml(event.title)} - Image ${idx + 1}" class="detail-image">
+        `).join('')}
+      </div>
+    `;
+  } else {
+    imagesHtml = `
+      <div class="detail-images">
+        <div class="no-image-placeholder">No images available</div>
+      </div>
+    `;
+  }
+
   let businessSection = '';
   if (event.business_id) {
     businessSection = `
@@ -69,84 +97,92 @@ function displayEvent(event) {
   const container = document.getElementById('event-container');
   container.innerHTML = `
     <div class="event-container">
-      <div class="event-header">
-        <h1 class="event-title">${escapeHtml(event.title)}</h1>
-        <div class="event-meta">
-          <span class="meta-badge meta-date">📅 ${formattedDate} at ${formattedTime}</span>
-          ${event.category ? `<span class="meta-badge meta-category">${escapeHtml(event.category)}</span>` : ''}
-          <span class="meta-badge ${priceClass}">💰 ${priceDisplay}</span>
+      <div class="detail-layout">
+        <div class="detail-left">
+          ${imagesHtml}
         </div>
-        ${isPast ? '<p style="color: #dc3545; font-weight: bold;">⚠️ This event has already passed</p>' : ''}
-      </div>
+        
+        <div class="detail-right">
+          <div class="event-header">
+            <h1 class="event-title">${escapeHtml(event.title)}</h1>
+            <div class="event-meta">
+              <span class="meta-badge meta-date">📅 ${formattedDate} at ${formattedTime}</span>
+              ${event.category ? `<span class="meta-badge meta-category">${escapeHtml(event.category)}</span>` : ''}
+              <span class="meta-badge ${priceClass}">💰 ${priceDisplay}</span>
+            </div>
+            ${isPast ? '<p style="color: #dc3545; font-weight: bold;">⚠️ This event has already passed</p>' : ''}
+          </div>
 
-      ${businessSection}
+          ${businessSection}
 
-      <div class="event-section">
-        <h2>📝 Description</h2>
-        <div class="event-description">${escapeHtml(event.description || 'No description available')}</div>
-      </div>
+          <div class="event-section">
+            <h2>📝 Description</h2>
+            <div class="event-description">${escapeHtml(event.description || 'No description available')}</div>
+          </div>
 
-      <div class="event-section">
-        <h2>ℹ️ Event Information</h2>
-        <div class="event-info-grid">
-          ${event.location ? `
-            <div class="info-item">
-              <div class="info-label">📍 Location</div>
-              <div class="info-value">${escapeHtml(event.location)}</div>
+          <div class="event-section">
+            <h2>ℹ️ Event Information</h2>
+            <div class="event-info-grid">
+              ${event.location ? `
+                <div class="info-item">
+                  <div class="info-label">📍 Location</div>
+                  <div class="info-value">${escapeHtml(event.location)}</div>
+                </div>
+              ` : ''}
+              <div class="info-item">
+                <div class="info-label">📅 Date</div>
+                <div class="info-value">${formattedDate}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">🕐 Time</div>
+                <div class="info-value">${formattedTime}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">💵 Price</div>
+                <div class="info-value">${priceDisplay}</div>
+              </div>
+            </div>
+          </div>
+
+          ${!isPast ? `
+            <div class="booking-section">
+              <h2>🎟️ Book Your Spot</h2>
+              <p>Interested in attending this event? Fill out the form below to reserve your spot!</p>
+              
+              <div id="booking-message"></div>
+              
+              <form id="booking-form" class="booking-form">
+                <div class="form-group">
+                  <label for="booking-name">Full Name *</label>
+                  <input type="text" id="booking-name" required placeholder="Enter your full name">
+                </div>
+
+                <div class="form-group">
+                  <label for="booking-email">Email Address *</label>
+                  <input type="email" id="booking-email" required placeholder="your.email@example.com">
+                </div>
+
+                <div class="form-group">
+                  <label for="booking-phone">Phone Number</label>
+                  <input type="tel" id="booking-phone" placeholder="+1 (555) 123-4567">
+                </div>
+
+                <div class="form-group">
+                  <label for="booking-tickets">Number of Tickets *</label>
+                  <input type="number" id="booking-tickets" min="1" max="10" value="1" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="booking-notes">Additional Notes</label>
+                  <textarea id="booking-notes" placeholder="Any special requirements or questions?"></textarea>
+                </div>
+
+                <button type="submit" class="success">Submit Booking Request</button>
+              </form>
             </div>
           ` : ''}
-          <div class="info-item">
-            <div class="info-label">📅 Date</div>
-            <div class="info-value">${formattedDate}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">🕐 Time</div>
-            <div class="info-value">${formattedTime}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">💵 Price</div>
-            <div class="info-value">${priceDisplay}</div>
-          </div>
         </div>
       </div>
-
-      ${!isPast ? `
-        <div class="booking-section">
-          <h2>🎟️ Book Your Spot</h2>
-          <p>Interested in attending this event? Fill out the form below to reserve your spot!</p>
-          
-          <div id="booking-message"></div>
-          
-          <form id="booking-form" class="booking-form">
-            <div class="form-group">
-              <label for="booking-name">Full Name *</label>
-              <input type="text" id="booking-name" required placeholder="Enter your full name">
-            </div>
-
-            <div class="form-group">
-              <label for="booking-email">Email Address *</label>
-              <input type="email" id="booking-email" required placeholder="your.email@example.com">
-            </div>
-
-            <div class="form-group">
-              <label for="booking-phone">Phone Number</label>
-              <input type="tel" id="booking-phone" placeholder="+1 (555) 123-4567">
-            </div>
-
-            <div class="form-group">
-              <label for="booking-tickets">Number of Tickets *</label>
-              <input type="number" id="booking-tickets" min="1" max="10" value="1" required>
-            </div>
-
-            <div class="form-group">
-              <label for="booking-notes">Additional Notes</label>
-              <textarea id="booking-notes" placeholder="Any special requirements or questions?"></textarea>
-            </div>
-
-            <button type="submit" class="success">Submit Booking Request</button>
-          </form>
-        </div>
-      ` : ''}
     </div>
   `;
 

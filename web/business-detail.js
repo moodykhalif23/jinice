@@ -47,55 +47,83 @@ function displayBusinessDetails(business) {
     day: 'numeric'
   });
 
+  // Handle images
+  let imagesHtml = '';
+  let imagesToUse = [];
+  
+  if (business.images && Array.isArray(business.images) && business.images.length > 0) {
+    imagesToUse = business.images;
+  } else if (business.image_urls && Array.isArray(business.image_urls) && business.image_urls.length > 0) {
+    imagesToUse = business.image_urls;
+  } else if (business.image_url) {
+    imagesToUse = [business.image_url];
+  }
+  
+  if (imagesToUse.length > 0) {
+    imagesHtml = `
+      <div class="detail-images">
+        ${imagesToUse.map((img, idx) => `
+          <img src="${img}" alt="${business.name} - Image ${idx + 1}" class="detail-image">
+        `).join('')}
+      </div>
+    `;
+  } else {
+    imagesHtml = `
+      <div class="detail-images">
+        <div class="no-image-placeholder">No images available</div>
+      </div>
+    `;
+  }
+
   content.innerHTML = `
     <div class="business-details">
-      <div class="business-header">
-        <div class="business-title">
-          <h2>${business.name}</h2>
-          <span class="category-badge">${business.category}</span>
+      <div class="detail-layout">
+        <div class="detail-left">
+          ${imagesHtml}
         </div>
-        <div class="business-rating">
-          ${business.rating || 'No rating'}★
-        </div>
-      </div>
+        
+        <div class="detail-right">
+          <div class="business-header">
+            <div class="business-title">
+              <h2>${business.name}</h2>
+              <span class="category-badge">${business.category}</span>
+            </div>
+            <div class="business-rating">
+              ${business.rating || 'No rating'}★
+            </div>
+          </div>
 
-      <div class="image-section">
-        <h3>Photos</h3>
-        <div id="business-gallery"></div>
-      </div>
+          <div class="business-description">
+            ${business.description || 'No description available.'}
+          </div>
 
-      <div class="business-description">
-        ${business.description || 'No description available.'}
-      </div>
-
-      <div class="contact-section">
-        <h3>Contact Information</h3>
-        <div class="contact-item">
-          <span class="contact-label">Phone:</span>
-          <span class="contact-value">
-            ${business.phone ? `<a href="tel:${business.phone}">${business.phone}</a>` : 'Not provided'}
-          </span>
-        </div>
-        <div class="contact-item">
-          <span class="contact-label">Email:</span>
-          <span class="contact-value">
-            ${business.email ? `<a href="mailto:${business.email}">${business.email}</a>` : 'Not provided'}
-          </span>
-        </div>
-        <div class="contact-item">
-          <span class="contact-label">Address:</span>
-          <span class="contact-value">${business.address || 'Not provided'}</span>
-        </div>
-        <div class="contact-item">
-          <span class="contact-label">Added:</span>
-          <span class="contact-value">${formattedDate}</span>
+          <div class="contact-section">
+            <h3>Contact Information</h3>
+            <div class="contact-item">
+              <span class="contact-label">Phone:</span>
+              <span class="contact-value">
+                ${business.phone ? `<a href="tel:${business.phone}">${business.phone}</a>` : 'Not provided'}
+              </span>
+            </div>
+            <div class="contact-item">
+              <span class="contact-label">Email:</span>
+              <span class="contact-value">
+                ${business.email ? `<a href="mailto:${business.email}">${business.email}</a>` : 'Not provided'}
+              </span>
+            </div>
+            <div class="contact-item">
+              <span class="contact-label">Address:</span>
+              <span class="contact-value">${business.address || 'Not provided'}</span>
+            </div>
+            <div class="contact-item">
+              <span class="contact-label">Added:</span>
+              <span class="contact-value">${formattedDate}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   `;
-
-  // Initialize image gallery after content is rendered
-  new ImageGallery('business', business.id, 'business-gallery');
 }
 
 function showError(message) {

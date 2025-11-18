@@ -686,11 +686,11 @@ hr {
 /* Extra large devices (large desktops, 1200px and up) */
 @media (min-width: 1200px) {
   .businesses-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 
   .events-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
@@ -736,21 +736,21 @@ hr {
 
   /* Keep vertical card layout on small screens for better UX */
   .card-body {
-    padding: 12px;
+    padding: 10px;
   }
 
   .business-card h3,
   .event-card h3 {
-    font-size: 0.95rem;
-    margin: 0 0 6px 0;
+    font-size: 0.9rem;
+    margin: 0 0 4px 0;
     line-height: 1.2;
   }
 
   .description,
   .event-description {
-    font-size: 13px;
+    font-size: 12px;
     color: #666;
-    margin: 6px 0;
+    margin: 4px 0;
     line-height: 1.3;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -761,38 +761,55 @@ hr {
   }
 
   .card-image-carousel {
-    height: 160px;
+    height: 120px;
   }
 
   .card-thumb {
-    height: 160px;
+    height: 120px;
   }
 
   .contact-info,
   .event-details {
-    font-size: 12px;
+    font-size: 11px;
     color: #555;
+    line-height: 1.3;
   }
 
   .contact-info div {
-    margin-bottom: 4px;
+    margin-bottom: 2px;
+  }
+
+  .event-details div {
+    margin-bottom: 2px;
   }
 
   .category {
-    font-size: 11px;
-    padding: 3px 6px;
+    font-size: 10px;
+    padding: 2px 6px;
+    margin-bottom: 4px;
   }
 
   .rating {
-    font-size: 13px;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+
+  .business-card .description {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .business-card .contact-info {
+    margin-bottom: 0;
   }
 
   /* Make event-meta badges wrap more compactly */
   .event-date,
   .event-category,
   .event-price {
-    font-size: 11px;
-    padding: 4px 8px;
+    font-size: 10px;
+    padding: 3px 6px;
+    margin-bottom: 4px;
   }
 
   /* Smaller carousel buttons on mobile */
@@ -817,6 +834,18 @@ hr {
   .card-carousel-dot {
     width: 6px;
     height: 6px;
+  }
+
+  /* Reduce card margins on mobile */
+  .business-card,
+  .event-card {
+    margin: 8px 0;
+  }
+
+  /* Tighter grid gap */
+  .businesses-grid,
+  .events-grid {
+    gap: 12px;
   }
 }
 
@@ -1124,5 +1153,83 @@ button:disabled {
     font-size: 14px;
     left: 10px;
     top: 15px;
+  }
+}
+
+
+/* ============================================
+   Detail Page Layout (Event & Business)
+   ============================================ */
+
+.detail-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detail-left {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+.detail-right {
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-images {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-image {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  object-fit: cover;
+  max-height: 400px;
+}
+
+.no-image-placeholder {
+  width: 100%;
+  height: 300px;
+  background-color: #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 16px;
+  border-radius: 8px;
+}
+
+/* Two-column layout on larger screens */
+@media (min-width: 768px) {
+  .detail-layout {
+    flex-direction: row;
+    gap: 30px;
+  }
+
+  .detail-left {
+    flex: 0 0 40%;
+    max-width: 500px;
+  }
+
+  .detail-right {
+    flex: 1;
+  }
+
+  .detail-image {
+    max-height: 300px;
+  }
+
+  .no-image-placeholder {
+    height: 400px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .detail-left {
+    flex: 0 0 45%;
   }
 }

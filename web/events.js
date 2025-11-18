@@ -41,10 +41,19 @@ function displayEvents(events) {
 
     // Handle multiple images or single image
     let imageHtml = '';
-    if (event.images && event.images.length > 0) {
-      imageHtml = createCarouselHtml(event.images);
+    let imagesToUse = [];
+    
+    // Check for multiple images in different possible formats
+    if (event.images && Array.isArray(event.images) && event.images.length > 0) {
+      imagesToUse = event.images;
+    } else if (event.image_urls && Array.isArray(event.image_urls) && event.image_urls.length > 0) {
+      imagesToUse = event.image_urls;
     } else if (event.image_url) {
-      imageHtml = `<img class="card-thumb" src="${event.image_url}" alt="${escapeHtml(event.title)} thumbnail" loading="lazy">`;
+      imagesToUse = [event.image_url];
+    }
+    
+    if (imagesToUse.length > 0) {
+      imageHtml = createCarouselHtml(imagesToUse);
     } else {
       imageHtml = '<div class="card-thumb" style="background-color: #e9ecef; display: flex; align-items: center; justify-content: center; color: #999;">No image</div>';
     }
@@ -99,8 +108,11 @@ function createCarouselHtml(images) {
 
 function initializeCarousels() {
   const carousels = document.querySelectorAll('.card-image-carousel');
-  carousels.forEach(carousel => {
+  console.log('Initializing carousels, found:', carousels.length);
+  
+  carousels.forEach((carousel, idx) => {
     const images = Array.from(carousel.querySelectorAll('.card-carousel-image'));
+    console.log(`Carousel ${idx}: ${images.length} images`);
     if (images.length <= 1) return;
 
     let currentIndex = 0;

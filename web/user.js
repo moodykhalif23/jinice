@@ -32,10 +32,19 @@ function filterBusinesses() {
       
       // Handle multiple images or single image
       let imageHtml = '';
-      if (business.images && business.images.length > 0) {
-        imageHtml = createCarouselHtml(business.images);
+      let imagesToUse = [];
+      
+      // Check for multiple images in different possible formats
+      if (business.images && Array.isArray(business.images) && business.images.length > 0) {
+        imagesToUse = business.images;
+      } else if (business.image_urls && Array.isArray(business.image_urls) && business.image_urls.length > 0) {
+        imagesToUse = business.image_urls;
       } else if (business.image_url) {
-        imageHtml = `<img class="card-thumb" src="${business.image_url}" alt="${business.name} thumbnail" loading="lazy">`;
+        imagesToUse = [business.image_url];
+      }
+      
+      if (imagesToUse.length > 0) {
+        imageHtml = createCarouselHtml(imagesToUse);
       } else {
         imageHtml = '<div class="card-thumb" style="background-color: #e9ecef; display: flex; align-items: center; justify-content: center; color: #999;">No image</div>';
       }
@@ -94,8 +103,11 @@ function createCarouselHtml(images) {
 
 function initializeCarousels() {
   const carousels = document.querySelectorAll('.card-image-carousel');
-  carousels.forEach(carousel => {
+  console.log('Initializing carousels, found:', carousels.length);
+  
+  carousels.forEach((carousel, idx) => {
     const images = Array.from(carousel.querySelectorAll('.card-carousel-image'));
+    console.log(`Carousel ${idx}: ${images.length} images`);
     if (images.length <= 1) return;
 
     let currentIndex = 0;
