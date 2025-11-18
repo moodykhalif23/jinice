@@ -5,11 +5,11 @@ function getBusinessIdFromUrl() {
   return urlParams.get('id');
 }
 
-function loadBusinessDetails() {
+async function loadBusinessDetails() {
   const businessId = getBusinessIdFromUrl();
 
   if (!businessId) {
-    showError('Business ID not found in URL');
+    showError('No business ID provided');
     return;
   }
 
@@ -20,26 +20,28 @@ function loadBusinessDetails() {
     return;
   }
 
-  fetch(`${base}/business/${id}`)
-    .then(res => {
-      if (!res.ok) {
-        if (res.status === 404) {
-          throw new Error('Business not found');
-        }
-        throw new Error(`HTTP error! status: ${res.status}`);
+  try {
+    const response = await fetch(`${base}/business/${id}`);
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('Business not found');
       }
-      return res.json();
-    })
-    .then(business => {
-      displayBusinessDetails(business);
-    })
-    .catch(err => {
-      console.error('Error loading business details:', err);
-      showError(err.message || 'Error loading business details');
-    });
+      throw new Error('Failed to load business details');
+    }
+    
+    const business = await response.json();
+    displayBusinessDetails(business);
+  } catch (error) {
+    console.error('Error loading business:', error);
+    showError(error.message || 'Failed to load business details. Please try again later.');
+  }
 }
 
 function displayBusinessDetails(business) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+  
   const content = document.getElementById('content');
   const formattedDate = new Date(business.created_at).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -76,7 +78,7 @@ function displayBusinessDetails(business) {
   }
 
   content.innerHTML = `
-    <div class="business-details">
+    <div class="business-container">
       <div class="detail-layout">
         <div class="detail-left">
           ${imagesHtml}
@@ -84,41 +86,56 @@ function displayBusinessDetails(business) {
         
         <div class="detail-right">
           <div class="business-header">
-            <div class="business-title">
-              <h2>${business.name}</h2>
-              <span class="category-badge">${business.category}</span>
-            </div>
-            <div class="business-rating">
-              ${business.rating || 'No rating'}★
+            <h1 class="business-title">${business.name}</h1>
+            <div class="business-meta">
+              <span class="meta-badge meta-category">${business.category}</span>
+              ${business.rating ? `<span class="meta-badge meta-rating">⭐ ${business.rating}</span>` : ''}
             </div>
           </div>
 
-          <div class="business-description">
-            ${business.description || 'No description available.'}
+          <div class="business-section">
+            <h2>📝 Description</h2>
+            <div class="business-description">${business.description || 'No description available.'}</div>
           </div>
 
-          <div class="contact-section">
-            <h3>Contact Information</h3>
-            <div class="contact-item">
-              <span class="contact-label">Phone:</span>
-              <span class="contact-value">
-                ${business.phone ? `<a href="tel:${business.phone}">${business.phone}</a>` : 'Not provided'}
-              </span>
-            </div>
-            <div class="contact-item">
-              <span class="contact-label">Email:</span>
-              <span class="contact-value">
-                ${business.email ? `<a href="mailto:${business.email}">${business.email}</a>` : 'Not provided'}
-              </span>
-            </div>
-            <div class="contact-item">
-              <span class="contact-label">Address:</span>
-              <span class="contact-value">${business.address || 'Not provided'}</span>
-            </div>
-            <div class="contact-item">
-              <span class="contact-label">Added:</span>
-              <span class="contact-value">${formattedDate}</span>
-            </div>
+          <div class="business-section">
+            <h2>📞 Contact Information</h2>
+            <ul class="contact-info-list">
+              ${business.phone ? `
+                <li class="contact-item">
+                  <span class="contact-icon">📱</span>
+                  <div class="contact-content">
+                    <div class="contact-label">Phone</div>
+                    <div class="contact-value"><a href="tel:${business.phone}">${business.phone}</a></div>
+                  </div>
+                </li>
+              ` : ''}
+              ${business.email ? `
+                <li class="contact-item">
+                  <span class="contact-icon">✉️</span>
+                  <div class="contact-content">
+                    <div class="contact-label">Email</div>
+                    <div class="contact-value"><a href="mailto:${business.email}">${business.email}</a></div>
+                  </div>
+                </li>
+              ` : ''}
+              ${business.address ? `
+                <li class="contact-item">
+                  <span class="contact-icon">📍</span>
+                  <div class="contact-content">
+                    <div class="contact-label">Address</div>
+                    <div class="contact-value">${business.address}</div>
+                  </div>
+                </li>
+              ` : ''}
+              <li class="contact-item">
+                <span class="contact-icon">📅</span>
+                <div class="contact-content">
+                  <div class="contact-label">Member Since</div>
+                  <div class="contact-value">${formattedDate}</div>
+                </div>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
@@ -127,16 +144,21 @@ function displayBusinessDetails(business) {
 }
 
 function showError(message) {
-  const content = document.getElementById('content');
-  content.innerHTML = `
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('error-container').innerHTML = `
     <div class="error">
-      <h3>⚠️ Error</h3>
-      <p>${message}</p>
-      <p><a href="user.html">← Back to Directory</a></p>
+      <strong>Error:</strong> ${escapeHtml(message)}
+      <br><br>
+      <a href="user.html">← Back to Businesses</a>
     </div>
   `;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  loadBusinessDetails();
-});
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Load business details on page load
+loadBusinessDetails();

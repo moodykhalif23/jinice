@@ -67,29 +67,42 @@
       line-height: 1.8;
       white-space: pre-wrap;
     }
-    .event-info-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 15px;
-      margin: 20px 0;
+    .event-info-list {
+      list-style: none;
+      padding: 0;
+      margin: 15px 0;
     }
     .info-item {
-      background-color: white;
-      padding: 15px;
-      border-radius: 6px;
-      border-left: 3px solid #007bff;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      padding: 12px 0;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .info-item:last-child {
+      border-bottom: none;
+    }
+    .info-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      width: 28px;
+      text-align: center;
+    }
+    .info-content {
+      flex: 1;
+      min-width: 0;
     }
     .info-label {
-      font-weight: bold;
+      font-weight: 600;
       color: #333;
       font-size: 14px;
-      margin-bottom: 5px;
+      margin-bottom: 4px;
     }
     .info-value {
       color: #555;
-      font-size: 16px;
+      font-size: 15px;
       word-break: break-word;
+      line-height: 1.5;
     }
     .booking-section {
       background-color: white;
@@ -125,9 +138,6 @@
       text-decoration: underline;
     }
     @media (min-width: 576px) {
-      .event-info-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
       .event-container {
         padding: 30px;
       }
@@ -137,13 +147,23 @@
       .booking-form {
         max-width: 500px;
       }
+      .info-icon {
+        font-size: 22px;
+        width: 32px;
+      }
+      .info-label {
+        font-size: 15px;
+      }
+      .info-value {
+        font-size: 16px;
+      }
     }
   </style>
   <script defer src="./event-detail.js"></script>
 </head>
 <body>
   <div class="container">
-    <h1>JiNice - Event Details</h1>
+    <img src="img/logo.png" alt="JiNice Logo" style="max-width: 200px; height: auto; margin: 0 0 10px 0;">
 
     <div class="nav">
       <a href="user.html">Browse Businesses</a>
@@ -161,7 +181,7 @@
     <div id="event-container" class="hide"></div>
 
     <hr>
-    <p>Jinice (copyright 2026)</p>
+    <p><img src="img/logo.png" alt="JiNice" style="max-width: 120px; height: auto; vertical-align: middle;"> (copyright 2026)</p>
   </div>
 </body>
 </html>

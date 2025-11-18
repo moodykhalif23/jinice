@@ -7,81 +7,97 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="image-manager.css">
   <style>
-    .business-details {
+    .business-container {
       background-color: transparent;
       border-radius: 8px;
       padding: 20px;
       margin: 20px 0;
     }
     .business-header {
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 15px;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
       border-bottom: 2px solid #e9ecef;
+      padding-bottom: 20px;
+      margin-bottom: 20px;
     }
     .business-title {
-      flex: 1;
-    }
-    .business-title h2 {
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      color: #333;
       margin: 0 0 10px 0;
-      color: #333;
     }
-    .business-rating {
-      font-size: 24px;
-      font-weight: bold;
-      color: #ffc107;
-      flex-shrink: 0;
+    .business-meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 15px 0;
+      align-items: center;
     }
-    .category-badge {
+    .meta-badge {
       display: inline-block;
-      background-color: #e9ecef;
-      color: #333;
-      padding: 6px 12px;
-      border-radius: 20px;
+      padding: 8px 16px;
+      border-radius: 6px;
       font-size: 14px;
-      margin-bottom: 15px;
+      font-weight: 500;
+    }
+    .meta-category {
+      background-color: #6c757d;
+      color: white;
+    }
+    .meta-rating {
+      background-color: #ffc107;
+      color: #333;
+      font-weight: bold;
+    }
+    .business-section {
+      margin: 25px 0;
+    }
+    .business-section h2 {
+      color: #333;
+      font-size: 20px;
+      margin-bottom: 10px;
+      border-left: 4px solid #007bff;
+      padding-left: 12px;
     }
     .business-description {
+      color: #555;
       font-size: 16px;
       line-height: 1.8;
-      margin: 20px 0;
-      color: #555;
       white-space: pre-wrap;
     }
-    .contact-section {
-      background-color: white;
-      border-radius: 8px;
-      padding: 15px;
-      margin-top: 20px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    .contact-section h3 {
-      margin-top: 0;
-      color: #333;
-      font-size: 18px;
+    .contact-info-list {
+      list-style: none;
+      padding: 0;
+      margin: 15px 0;
     }
     .contact-item {
+      padding: 12px 0;
+      border-bottom: 1px solid #e9ecef;
       display: flex;
-      flex-direction: column;
-      margin: 10px 0;
-      padding: 8px 0;
-      border-bottom: 1px solid #eee;
+      align-items: flex-start;
+      gap: 12px;
     }
     .contact-item:last-child {
       border-bottom: none;
     }
+    .contact-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      width: 28px;
+      text-align: center;
+    }
+    .contact-content {
+      flex: 1;
+      min-width: 0;
+    }
     .contact-label {
-      font-weight: bold;
-      color: #666;
-      margin-bottom: 5px;
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+      margin-bottom: 4px;
     }
     .contact-value {
-      flex: 1;
+      color: #555;
+      font-size: 15px;
       word-break: break-word;
+      line-height: 1.5;
     }
     .contact-value a {
       color: #007bff;
@@ -90,27 +106,19 @@
     .contact-value a:hover {
       text-decoration: underline;
     }
-    .image-section {
-      margin: 30px 0;
-    }
-    .image-section h3 {
-      margin-bottom: 15px;
-      color: #333;
-    }
     @media (min-width: 576px) {
-      .contact-item {
-        flex-direction: row;
-        align-items: center;
+      .business-container {
+        padding: 30px;
+      }
+      .contact-icon {
+        font-size: 22px;
+        width: 32px;
       }
       .contact-label {
-        width: 120px;
-        margin-bottom: 0;
+        font-size: 15px;
       }
-      .business-details {
-        padding: 24px;
-      }
-      .contact-section {
-        padding: 20px;
+      .contact-value {
+        font-size: 16px;
       }
     }
   </style>
@@ -118,26 +126,26 @@
   <script defer src="./business-detail.js"></script>
 </head>
 <body>
-  <div class="container-narrow">
-    <h1>Business Directory</h1>
-    <p>Comprehensive business information</p>
+  <div class="container">
+    <img src="img/logo.png" alt="JiNice Logo" style="max-width: 200px; height: auto; margin: 0 0 10px 0;">
 
     <div class="nav">
       <a href="user.html">Browse Businesses</a>
+      <a href="events.html">Browse Events</a>
       <a href="auth.html">Portal Access</a>
       <a href="index.html">Home</a>
     </div>
 
-    <a href="user.html" class="back-link">← Back to Directory</a>
-
-    <div id="content">
-      <div class="loading">
-        Loading business details...
-      </div>
+    <div id="loading" class="loading">
+      <p>Loading business details...</p>
     </div>
 
+    <div id="error-container"></div>
+
+    <div id="content" class="hide"></div>
+
     <hr>
-    <p>Jinice (copyright 2026)</p>
+    <p><img src="img/logo.png" alt="JiNice" style="max-width: 120px; height: auto; vertical-align: middle;"> (copyright 2026)</p>
   </div>
 </body>
 </html>

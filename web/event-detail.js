@@ -122,26 +122,38 @@ function displayEvent(event) {
 
           <div class="event-section">
             <h2>ℹ️ Event Information</h2>
-            <div class="event-info-grid">
+            <ul class="event-info-list">
               ${event.location ? `
-                <div class="info-item">
-                  <div class="info-label">📍 Location</div>
-                  <div class="info-value">${escapeHtml(event.location)}</div>
-                </div>
+                <li class="info-item">
+                  <span class="info-icon">📍</span>
+                  <div class="info-content">
+                    <div class="info-label">Location</div>
+                    <div class="info-value">${escapeHtml(event.location)}</div>
+                  </div>
+                </li>
               ` : ''}
-              <div class="info-item">
-                <div class="info-label">📅 Date</div>
-                <div class="info-value">${formattedDate}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">🕐 Time</div>
-                <div class="info-value">${formattedTime}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">💵 Price</div>
-                <div class="info-value">${priceDisplay}</div>
-              </div>
-            </div>
+              <li class="info-item">
+                <span class="info-icon">📅</span>
+                <div class="info-content">
+                  <div class="info-label">Date</div>
+                  <div class="info-value">${formattedDate}</div>
+                </div>
+              </li>
+              <li class="info-item">
+                <span class="info-icon">🕐</span>
+                <div class="info-content">
+                  <div class="info-label">Time</div>
+                  <div class="info-value">${formattedTime}</div>
+                </div>
+              </li>
+              <li class="info-item">
+                <span class="info-icon">💵</span>
+                <div class="info-content">
+                  <div class="info-label">Price</div>
+                  <div class="info-value">${priceDisplay}</div>
+                </div>
+              </li>
+            </ul>
           </div>
 
           ${!isPast ? `
