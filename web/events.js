@@ -40,7 +40,7 @@ function displayEvents(events) {
       : `<span class="event-price free">FREE</span>`;
 
     return `
-      <div class="event-card" onclick="window.location.href='event-detail.html?id=${event.id}'" style="cursor: pointer;">
+      <a class="event-card" href="event-detail.html?id=${event.id}">
         <h3>${escapeHtml(event.title)}</h3>
         <div>
           <span class="event-date">📅 ${formattedDate}</span>
@@ -52,10 +52,7 @@ function displayEvents(events) {
           ${event.business_id ? `<div><strong>🏢 Business ID:</strong> ${event.business_id}</div>` : ''}
         </div>
         ${price}
-        <div style="margin-top: 12px;">
-          <button onclick="event.stopPropagation(); window.location.href='event-detail.html?id=${event.id}'" style="padding: 8px 16px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">View Details & Book</button>
-        </div>
-      </div>
+      </a>
     `;
   }).join('');
 }

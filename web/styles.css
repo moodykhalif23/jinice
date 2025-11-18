@@ -292,6 +292,10 @@ label {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
+.event-card.past {
+  opacity: 0.6;
+}
+
 .event-card h3 {
   margin: 0 0 8px 0;
   color: #333;

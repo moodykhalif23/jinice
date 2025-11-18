@@ -136,7 +136,7 @@ function displayEvents(events) {
     const businessName = business ? business.name : (event.business_id ? `Business #${event.business_id}` : 'Standalone Event');
 
     return `
-      <div class="event-card" style="${isPast ? 'opacity: 0.6;' : ''}">
+      <div class="event-card ${isPast ? 'past' : ''}">
         <h3>${escapeHtml(event.title)} ${isPast ? '(Past)' : ''}</h3>
         <div>
           <span class="event-date">📅 ${formattedDate}</span>
@@ -321,6 +321,9 @@ function editEvent(eventId) {
     <label>Price:</label>
     <input type="number" id="edit-price-${eventId}" value="${event.price}" min="0" step="0.01">
     
+    <label for="edit-images-${eventId}">Upload Images:</label>
+    <input type="file" id="edit-images-${eventId}" accept="image/*" multiple>
+    
     <button onclick="saveEvent(${eventId})" class="success">Save Changes</button>
     <button onclick="cancelEdit(${eventId})" class="secondary">Cancel</button>
   `;
@@ -366,6 +369,14 @@ async function saveEvent(eventId) {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Failed to update event');
+    }
+
+    const updated = await response.json().catch(() => ({}));
+
+    // If images were selected in the edit form, upload them
+    const editImageInput = document.getElementById(`edit-images-${eventId}`);
+    if (editImageInput && editImageInput.files && editImageInput.files.length > 0) {
+      await uploadFiles(editImageInput.files, 'event', eventId);
     }
 
     alert('Event updated successfully!');
