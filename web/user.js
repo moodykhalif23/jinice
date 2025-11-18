@@ -23,13 +23,15 @@ function filterBusinesses() {
     ? allBusinesses.filter(business => business.category === filterValue)
     : allBusinesses;
 
-  if (filteredBusinesses.length > 0) {
+    if (filteredBusinesses.length > 0) {
     filteredBusinesses.forEach(business => {
       const card = document.createElement('a');
       card.className = 'business-card';
       card.href = `business-detail.html?id=${business.id}`;
       const rating = business.rating ? `${business.rating}★` : 'No rating';
+      const thumbHtml = business.image_url ? `<img class="card-thumb" src="${business.image_url}" alt="${business.name} thumbnail" loading="lazy">` : '';
       card.innerHTML = `
+        ${thumbHtml}
         <h3>${business.name}</h3>
         <span class="category">${business.category}</span>
         <div class="rating">${rating}</div>

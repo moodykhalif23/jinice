@@ -39,8 +39,11 @@ function displayEvents(events) {
       ? `<span class="event-price">$${event.price.toFixed(2)}</span>`
       : `<span class="event-price free">FREE</span>`;
 
+    const thumbHtml = event.image_url ? `<img class="card-thumb" src="${event.image_url}" alt="${escapeHtml(event.title)} thumbnail" loading="lazy">` : '';
+
     return `
       <a class="event-card" href="event-detail.html?id=${event.id}">
+        ${thumbHtml}
         <h3>${escapeHtml(event.title)}</h3>
         <div>
           <span class="event-date">📅 ${formattedDate}</span>

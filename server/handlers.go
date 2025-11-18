@@ -857,7 +857,13 @@ func healthHandler(w http.ResponseWriter, _ *http.Request) {
 }
 
 func getBusinessesHandler(w http.ResponseWriter, _ *http.Request) {
-	rows, err := db.Query("SELECT id, name, category, description, phone, email, address, image_url, rating, created_at, owner_id FROM businesses ORDER BY created_at DESC")
+	rows, err := db.Query(`
+		SELECT id, name, category, description, phone, email, address,
+		  (SELECT image_url FROM images WHERE entity_type = 'business' AND entity_id = businesses.id ORDER BY is_primary DESC, display_order ASC, created_at ASC LIMIT 1) as image_url,
+		  rating, created_at, owner_id
+		FROM businesses
+		ORDER BY created_at DESC
+	`)
 	if err != nil {
 		log.Printf("Error querying businesses: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -1118,8 +1124,13 @@ func getBusinessByIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var business Business
-	err = db.QueryRow("SELECT id, name, category, description, phone, email, address, rating, created_at, owner_id FROM businesses WHERE id = ?", id).
-		Scan(&business.ID, &business.Name, &business.Category, &business.Description, &business.Phone, &business.Email, &business.Address, &business.Rating, &business.CreatedAt, &business.OwnerID)
+	err = db.QueryRow(`
+		SELECT id, name, category, description, phone, email, address,
+		  (SELECT image_url FROM images WHERE entity_type = 'business' AND entity_id = businesses.id ORDER BY is_primary DESC, display_order ASC, created_at ASC LIMIT 1) as image_url,
+		  rating, created_at, owner_id
+		FROM businesses WHERE id = ?
+	`, id).
+		Scan(&business.ID, &business.Name, &business.Category, &business.Description, &business.Phone, &business.Email, &business.Address, &business.ImageURL, &business.Rating, &business.CreatedAt, &business.OwnerID)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -1156,7 +1167,14 @@ func getMyBusinessesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("SELECT id, name, category, description, phone, email, address, rating, created_at, owner_id FROM businesses WHERE owner_id = ? ORDER BY created_at DESC", ownerID)
+	rows, err := db.Query(`
+				SELECT id, name, category, description, phone, email, address,
+					(SELECT image_url FROM images WHERE entity_type = 'business' AND entity_id = businesses.id ORDER BY is_primary DESC, display_order ASC, created_at ASC LIMIT 1) as image_url,
+					rating, created_at, owner_id
+				FROM businesses
+				WHERE owner_id = ?
+				ORDER BY created_at DESC
+		`, ownerID)
 	if err != nil {
 		log.Printf("Error querying user businesses: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -1168,7 +1186,11 @@ func getMyBusinessesHandler(w http.ResponseWriter, r *http.Request) {
 	var businesses []Business
 	for rows.Next() {
 		var b Business
-		err := rows.Scan(&b.ID, &b.Name, &b.Category, &b.Description, &b.Phone, &b.Email, &b.Address, &b.Rating, &b.CreatedAt, &b.OwnerID)
+		var imageURL sql.NullString
+		err := rows.Scan(&b.ID, &b.Name, &b.Category, &b.Description, &b.Phone, &b.Email, &b.Address, &imageURL, &b.Rating, &b.CreatedAt, &b.OwnerID)
+		if err == nil && imageURL.Valid {
+			b.ImageURL = imageURL.String
+		}
 		if err != nil {
 			log.Printf("Error scanning business: %v", err)
 			continue
@@ -1342,14 +1364,18 @@ func getBusinessEventsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		rows, err = db.Query(`
-			SELECT id, owner_id, business_id, title, description, event_date, location, price, category, created_at
+			SELECT id, owner_id, business_id, title, description, event_date, location, price, category,
+			  (SELECT image_url FROM images WHERE entity_type = 'event' AND entity_id = events.id ORDER BY is_primary DESC, display_order ASC, created_at ASC LIMIT 1) as image_url,
+			  created_at
 			FROM events
 			WHERE business_id = ? AND event_date >= NOW()
 			ORDER BY event_date ASC
 		`, businessID)
 	} else {
 		rows, err = db.Query(`
-			SELECT id, owner_id, business_id, title, description, event_date, location, price, category, created_at
+			SELECT id, owner_id, business_id, title, description, event_date, location, price, category,
+			  (SELECT image_url FROM images WHERE entity_type = 'event' AND entity_id = events.id ORDER BY is_primary DESC, display_order ASC, created_at ASC LIMIT 1) as image_url,
+			  created_at
 			FROM events
 			WHERE event_date >= NOW()
 			ORDER BY event_date ASC
@@ -1368,7 +1394,8 @@ func getBusinessEventsHandler(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var e BusinessEvent
 		var businessID sql.NullInt64
-		err := rows.Scan(&e.ID, &e.OwnerID, &businessID, &e.Title, &e.Description, &e.EventDate, &e.Location, &e.Price, &e.Category, &e.CreatedAt)
+		var imageURL sql.NullString
+		err := rows.Scan(&e.ID, &e.OwnerID, &businessID, &e.Title, &e.Description, &e.EventDate, &e.Location, &e.Price, &e.Category, &imageURL, &e.CreatedAt)
 		if err != nil {
 			log.Printf("Error scanning event: %v", err)
 			continue
@@ -1376,6 +1403,9 @@ func getBusinessEventsHandler(w http.ResponseWriter, r *http.Request) {
 		if businessID.Valid {
 			bid := int(businessID.Int64)
 			e.BusinessID = &bid
+		}
+		if imageURL.Valid {
+			e.ImageURL = imageURL.String
 		}
 		events = append(events, e)
 	}
@@ -1747,7 +1777,9 @@ func getMyEventsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := db.Query(`
-		SELECT id, owner_id, business_id, title, description, event_date, location, price, category, created_at
+		SELECT id, owner_id, business_id, title, description, event_date, location, price, category,
+		  (SELECT image_url FROM images WHERE entity_type = 'event' AND entity_id = events.id ORDER BY is_primary DESC, display_order ASC, created_at ASC LIMIT 1) as image_url,
+		  created_at
 		FROM events
 		WHERE owner_id = ?
 		ORDER BY event_date ASC
@@ -1765,7 +1797,8 @@ func getMyEventsHandler(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var e BusinessEvent
 		var businessID sql.NullInt64
-		err := rows.Scan(&e.ID, &e.OwnerID, &businessID, &e.Title, &e.Description, &e.EventDate, &e.Location, &e.Price, &e.Category, &e.CreatedAt)
+		var imageURL sql.NullString
+		err := rows.Scan(&e.ID, &e.OwnerID, &businessID, &e.Title, &e.Description, &e.EventDate, &e.Location, &e.Price, &e.Category, &imageURL, &e.CreatedAt)
 		if err != nil {
 			log.Printf("Error scanning event: %v", err)
 			continue
@@ -1773,6 +1806,9 @@ func getMyEventsHandler(w http.ResponseWriter, r *http.Request) {
 		if businessID.Valid {
 			bid := int(businessID.Int64)
 			e.BusinessID = &bid
+		}
+		if imageURL.Valid {
+			e.ImageURL = imageURL.String
 		}
 		events = append(events, e)
 	}

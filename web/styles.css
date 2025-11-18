@@ -296,6 +296,15 @@ label {
   opacity: 0.6;
 }
 
+/* Thumbnail used on event and business cards */
+.card-thumb {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
 .event-card h3 {
   margin: 0 0 8px 0;
   color: #333;
@@ -364,14 +373,14 @@ label {
 /* Businesses Grid */
 .businesses-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
 /* Events Grid */
 .events-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
 }
 
@@ -538,9 +547,8 @@ hr {
   .businesses-grid {
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
-
   .events-grid {
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
 
   .stats-grid {
@@ -564,7 +572,7 @@ hr {
   }
 
   .events-grid {
-    grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   }
 
   .stats-grid {
@@ -579,7 +587,7 @@ hr {
   }
 
   .events-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
