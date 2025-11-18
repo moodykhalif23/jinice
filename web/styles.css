@@ -686,7 +686,7 @@ hr {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: white;
+  background: transparent;
   padding: 20px;
   position: relative;
 }
