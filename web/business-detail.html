@@ -8,26 +8,33 @@
   <link rel="stylesheet" href="image-manager.css">
   <style>
     .business-details {
-      background-color: white;
-      border: 1px solid #ddd;
+      background-color: transparent;
       border-radius: 8px;
       padding: 20px;
       margin: 20px 0;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
     .business-header {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
       gap: 15px;
       margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #e9ecef;
     }
     .business-title {
       flex: 1;
+    }
+    .business-title h2 {
+      margin: 0 0 10px 0;
+      color: #333;
     }
     .business-rating {
       font-size: 24px;
       font-weight: bold;
       color: #ffc107;
+      flex-shrink: 0;
     }
     .category-badge {
       display: inline-block;
@@ -40,15 +47,17 @@
     }
     .business-description {
       font-size: 16px;
-      line-height: 1.6;
+      line-height: 1.8;
       margin: 20px 0;
       color: #555;
+      white-space: pre-wrap;
     }
     .contact-section {
-      background-color: #f8f9fa;
+      background-color: white;
       border-radius: 8px;
       padding: 15px;
       margin-top: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
     .contact-section h3 {
       margin-top: 0;
@@ -89,20 +98,12 @@
       color: #333;
     }
     @media (min-width: 576px) {
-      .business-header {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: flex-start;
-      }
-      .business-rating {
-        text-align: right;
-      }
       .contact-item {
         flex-direction: row;
         align-items: center;
       }
       .contact-label {
-        width: 100px;
+        width: 120px;
         margin-bottom: 0;
       }
       .business-details {
