@@ -22,17 +22,20 @@
     <h2>Directory Listings</h2>
     <button id="btn-refresh-businesses" class="success">Refresh Listings</button>
 
-    <label for="category-filter">Filter by Category:</label>
-    <select id="category-filter">
-    <option value="">All Categories</option>
-    <option value="Restaurant">Restaurant</option>
-    <option value="Retail">Retail</option>
-    <option value="Services">Services</option>
-    <option value="Healthcare">Healthcare</option>
-    <option value="Technology">Technology</option>
-    <option value="Entertainment">Entertainment</option>
-    <option value="Other">Other</option>
-  </select>
+    <div class="filter-bar">
+      <input type="text" id="search-input" placeholder="Search businesses..." />
+      <label for="category-filter" class="sr-only">Filter by category</label>
+      <select id="category-filter">
+        <option value="">All Categories</option>
+        <option value="Restaurant">Restaurant</option>
+        <option value="Retail">Retail</option>
+        <option value="Services">Services</option>
+        <option value="Healthcare">Healthcare</option>
+        <option value="Technology">Technology</option>
+        <option value="Entertainment">Entertainment</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
 
     <div id="businesses-list" class="businesses-grid"></div>
 

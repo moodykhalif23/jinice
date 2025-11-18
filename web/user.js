@@ -15,13 +15,22 @@ function loadBusinesses() {
 }
 
 function filterBusinesses() {
+  const searchTerm = document.getElementById('search-input').value.toLowerCase();
   const filterValue = document.getElementById('category-filter').value;
   const list = document.getElementById('businesses-list');
   list.innerHTML = '';
 
-  const filteredBusinesses = filterValue
-    ? allBusinesses.filter(business => business.category === filterValue)
-    : allBusinesses;
+  const filteredBusinesses = allBusinesses.filter(business => {
+    const matchesSearch = !searchTerm || 
+      business.name.toLowerCase().includes(searchTerm) ||
+      (business.description && business.description.toLowerCase().includes(searchTerm)) ||
+      (business.address && business.address.toLowerCase().includes(searchTerm)) ||
+      (business.category && business.category.toLowerCase().includes(searchTerm));
+    
+    const matchesCategory = !filterValue || business.category === filterValue;
+
+    return matchesSearch && matchesCategory;
+  });
 
   if (filteredBusinesses.length > 0) {
     filteredBusinesses.forEach(business => {
@@ -192,6 +201,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const refreshBtn = document.getElementById('btn-refresh-businesses');
   if (refreshBtn) {
     refreshBtn.addEventListener('click', loadBusinesses);
+  }
+
+  // Search input
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', filterBusinesses);
   }
 
   // Category filter
