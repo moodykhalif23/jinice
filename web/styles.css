@@ -523,11 +523,11 @@ label {
    ============================================ */
 
 .filter-bar {
-  background-color: white;
+  background-color: transparent;
   padding: 16px;
   border-radius: 8px;
   margin: 20px 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
 }
 
 .filter-bar input,
