@@ -27,27 +27,28 @@
   <script defer src="./business-owner.js"></script>
 </head>
 <body>
-  <div class="container" style="padding-top: 0;">
-    <div class="header-with-auth">
-      <div>
-        <h1 class="portal-title" style="margin-top: 0; margin-bottom: 0;">Business Owner Portal</h1>
-      </div>
-      <div class="auth-buttons">
-        <button id="show-login-nav" class="secondary auth-btn-nav">Login</button>
-        <button id="show-register-nav" class="secondary auth-btn-nav">Sign Up</button>
-        <button id="logout-nav" class="danger auth-btn-nav">Logout</button>
-      </div>
+  <div class="header-with-auth">
+    <div>
+      <h1 class="portal-title" style="margin-top: 0; margin-bottom: 0;">Business Owner Portal</h1>
     </div>
-    
-    <p id="user-status" style="margin-top: 0; margin-bottom: 0;">Manage your business listings and monitor performance</p>
+    <div class="auth-buttons">
+      <button id="show-login-nav" class="secondary auth-btn-nav">Login</button>
+      <button id="show-register-nav" class="secondary auth-btn-nav">Sign Up</button>
+      <button id="logout-nav" class="danger auth-btn-nav">Logout</button>
+    </div>
+  </div>
+  
+  <p id="user-status" style="margin-top: 0; margin-bottom: 0;">Manage your business listings and monitor performance</p>
 
-    <div class="nav" style="margin-top: 8px;">
+  <div class="nav" style="margin-top: 8px;">
     <a href="user.html">Browse Businesses</a>
     <a href="events.html">Browse Events</a>
     <a href="business-owner.html" class="active">Business Portal</a>
     <a href="manage-events.html">Manage Events</a>
     <a href="index.html">Home</a>
   </div>
+
+  <div class="container" style="padding-top: 0;">
 
   <!-- Login Form (shown when not logged in) -->
   <div id="login-container">
