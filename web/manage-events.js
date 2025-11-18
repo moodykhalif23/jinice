@@ -51,6 +51,7 @@ function showDashboard() {
   
   loadMyBusinesses();
   loadMyEvents();
+  hidePortalLinkIfPortalUser();
 }
 
 async function loadMyBusinesses() {
@@ -195,6 +196,15 @@ async function createEvent() {
       throw new Error(error.error || 'Failed to create event');
     }
 
+    const created = await response.json();
+    const eventId = created.id;
+
+    // If images were selected, upload them
+    const imageInput = document.getElementById('event-images');
+    if (imageInput && imageInput.files && imageInput.files.length > 0) {
+      await uploadFiles(imageInput.files, 'event', eventId);
+    }
+
     alert('Event created successfully!');
     
     // Clear form
@@ -211,6 +221,61 @@ async function createEvent() {
     console.error('Error creating event:', error);
     alert('Failed to create event: ' + error.message);
   }
+}
+
+async function uploadFiles(fileList, entityType, entityId) {
+  const files = Array.from(fileList);
+  for (const file of files) {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('entity_type', entityType);
+      formData.append('entity_id', String(entityId));
+
+      const res = await fetch(`${API_BASE}/images/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: formData
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.error('Image upload failed:', err);
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+    }
+  }
+}
+
+function hidePortalLinkIfPortalUser() {
+  try {
+    const raw = sessionStorage.getItem('currentUser');
+    if (!raw) return;
+    const user = JSON.parse(raw);
+    if (user && (user.type === 'business_owner' || user.type === 'event_owner')) {
+      document.querySelectorAll('.nav a[href="auth.html"]').forEach(a => a.remove());
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+
+function restorePortalLink() {
+  const nav = document.querySelector('.nav');
+  if (!nav) return;
+  
+  // Check if Portal Access link already exists
+  const existing = nav.querySelector('a[href="auth.html"]');
+  if (existing) return;
+  
+  // Create and insert Portal Access link
+  const link = document.createElement('a');
+  link.href = 'auth.html';
+  link.textContent = 'Portal Access';
+  nav.appendChild(link);
 }
 
 function editEvent(eventId) {
@@ -350,9 +415,31 @@ function escapeHtml(text) {
 document.getElementById('btn-create-event').addEventListener('click', createEvent);
 document.getElementById('btn-refresh-events').addEventListener('click', loadMyEvents);
 document.getElementById('logout-nav').addEventListener('click', () => {
+  // Call logout endpoint
+  const token = sessionStorage.getItem('authToken');
+  if (token) {
+    fetch(`${API_BASE}/logout`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    .then(() => {
+      console.log('Logged out successfully');
+    })
+    .catch(err => {
+      console.error('Logout error:', err);
+    });
+  }
+  
   sessionStorage.removeItem('authToken');
   sessionStorage.removeItem('currentUser');
-  window.location.href = 'business-owner.html';
+  
+  // Restore Portal Access link
+  restorePortalLink();
+  
+  // Redirect
+  window.location.href = 'manage-events.html';
 });
 
 // Initialize

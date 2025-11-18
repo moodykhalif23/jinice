@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
       authToken = savedToken;
       showDashboard();
       loadUserData();
+      hidePortalLinkIfPortalUser();
     } catch (e) {
       console.error('Error parsing saved user data', e);
       showNotAuthenticated();
@@ -208,7 +209,26 @@ function handleLogout() {
   authToken = null;
   sessionStorage.removeItem('authToken');
   sessionStorage.removeItem('currentUser');
+  
+  // Restore Portal Access link
+  restorePortalLink();
+  
   showNotAuthenticated();
+}
+
+function restorePortalLink() {
+  const nav = document.querySelector('.nav');
+  if (!nav) return;
+  
+  // Check if Portal Access link already exists
+  const existing = nav.querySelector('a[href="auth.html"]');
+  if (existing) return;
+  
+  // Create and insert Portal Access link
+  const link = document.createElement('a');
+  link.href = 'auth.html';
+  link.textContent = 'Portal Access';
+  nav.appendChild(link);
 }
 
 // Helper function to make authenticated requests
@@ -368,8 +388,19 @@ function handleAddBusiness(e) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, category, description, phone, email, address, rating })
   })
-    .then(res => res.json())
-    .then(data => {
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to create business');
+      return res.json();
+    })
+    .then(async data => {
+      const businessId = data.id;
+
+      // If images selected, upload them
+      const imageInput = document.getElementById('business-images');
+      if (imageInput && imageInput.files && imageInput.files.length > 0) {
+        await uploadFiles(imageInput.files, 'business', businessId);
+      }
+
       // Clear form
       document.getElementById('business-name').value = '';
       document.getElementById('business-category').value = '';
@@ -384,8 +415,63 @@ function handleAddBusiness(e) {
     })
     .catch(err => {
       console.error('Error creating business:', err);
-      alert('Error adding business: ' + err);
+      alert('Error adding business: ' + err.message || err);
     });
+}
+
+async function uploadFiles(fileList, entityType, entityId) {
+  const files = Array.from(fileList);
+  for (const file of files) {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('entity_type', entityType);
+      formData.append('entity_id', String(entityId));
+
+      const res = await fetch(base + '/images/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: formData
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.error('Image upload failed:', err);
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+    }
+  }
+}
+
+function hidePortalLinkIfPortalUser() {
+  try {
+    const raw = sessionStorage.getItem('currentUser');
+    if (!raw) return;
+    const user = JSON.parse(raw);
+    if (user && (user.type === 'business_owner' || user.type === 'event_owner')) {
+      document.querySelectorAll('.nav a[href="auth.html"]').forEach(a => a.remove());
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+
+function restorePortalLink() {
+  const nav = document.querySelector('.nav');
+  if (!nav) return;
+  
+  // Check if Portal Access link already exists
+  const existing = nav.querySelector('a[href="auth.html"]');
+  if (existing) return;
+  
+  // Create and insert Portal Access link
+  const link = document.createElement('a');
+  link.href = 'auth.html';
+  link.textContent = 'Portal Access';
+  nav.appendChild(link);
 }
 
 function saveEdit(id) {

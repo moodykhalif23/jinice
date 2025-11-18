@@ -418,6 +418,47 @@ func createTables() error {
 		return err
 	}
 
+	// Images table
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS images (
+			id INT AUTO_INCREMENT PRIMARY KEY,
+			entity_type VARCHAR(50) NOT NULL,
+			entity_id INT NOT NULL,
+			image_url VARCHAR(500) NOT NULL,
+			storage_path VARCHAR(500),
+			caption VARCHAR(255),
+			display_order INT DEFAULT 0,
+			is_primary BOOLEAN DEFAULT FALSE,
+			uploaded_by INT,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL,
+			INDEX idx_images_entity (entity_type, entity_id),
+			INDEX idx_images_created_at (created_at)
+		)
+	`)
+	if err != nil {
+		return err
+	}
+
+	// Image metadata table
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS image_metadata (
+			id INT AUTO_INCREMENT PRIMARY KEY,
+			image_id INT NOT NULL,
+			file_size INT,
+			width INT,
+			height INT,
+			mime_type VARCHAR(100),
+			original_filename VARCHAR(255),
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE,
+			INDEX idx_image_metadata_image_id (image_id)
+		)
+	`)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -1289,10 +1330,10 @@ func businessEventsRouter(w http.ResponseWriter, r *http.Request) {
 func getBusinessEventsHandler(w http.ResponseWriter, r *http.Request) {
 	// Get optional business_id filter
 	businessIDStr := r.URL.Query().Get("business_id")
-	
+
 	var rows *sql.Rows
 	var err error
-	
+
 	if businessIDStr != "" {
 		businessID, err := strconv.Atoi(businessIDStr)
 		if err != nil {
@@ -1314,7 +1355,7 @@ func getBusinessEventsHandler(w http.ResponseWriter, r *http.Request) {
 			ORDER BY event_date ASC
 		`)
 	}
-	
+
 	if err != nil {
 		log.Printf("Error querying events: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -1481,7 +1522,7 @@ func updateBusinessEventHandler(w http.ResponseWriter, r *http.Request) {
 	// Verify event belongs to owner
 	var eventOwnerID int
 	err = db.QueryRow("SELECT owner_id FROM events WHERE id = ?", req.ID).Scan(&eventOwnerID)
-	
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			w.WriteHeader(http.StatusNotFound)
@@ -1564,7 +1605,7 @@ func updateBusinessEventHandler(w http.ResponseWriter, r *http.Request) {
 		FROM events
 		WHERE id = ?
 	`, req.ID).Scan(&event.ID, &event.OwnerID, &businessID, &event.Title, &event.Description, &event.EventDate, &event.Location, &event.Price, &event.Category, &event.CreatedAt)
-	
+
 	if businessID.Valid {
 		bid := int(businessID.Int64)
 		event.BusinessID = &bid
@@ -1669,7 +1710,7 @@ func getEventByIDHandler(w http.ResponseWriter, r *http.Request) {
 		FROM events
 		WHERE id = ?
 	`, id).Scan(&event.ID, &event.OwnerID, &businessID, &event.Title, &event.Description, &event.EventDate, &event.Location, &event.Price, &event.Category, &event.CreatedAt)
-	
+
 	if businessID.Valid {
 		bid := int(businessID.Int64)
 		event.BusinessID = &bid
@@ -1711,7 +1752,7 @@ func getMyEventsHandler(w http.ResponseWriter, r *http.Request) {
 		WHERE owner_id = ?
 		ORDER BY event_date ASC
 	`, ownerID)
-	
+
 	if err != nil {
 		log.Printf("Error querying user events: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)

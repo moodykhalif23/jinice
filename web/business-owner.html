@@ -30,12 +30,12 @@
   <div class="container">
     <div class="header-with-auth">
       <div>
-        <h1 style="margin: 0; padding-bottom: 10px; border-bottom: 2px solid #333;">Business Owner Portal</h1>
+        <h1 class="portal-title">Business Owner Portal</h1>
       </div>
       <div class="auth-buttons">
-        <button id="show-login-nav" class="secondary" style="display: inline-block;">Login</button>
-        <button id="show-register-nav" class="secondary" style="display: inline-block;">Sign Up</button>
-        <button id="logout-nav" class="danger" style="display: none;">Logout</button>
+        <button id="show-login-nav" class="secondary auth-btn-nav">Login</button>
+        <button id="show-register-nav" class="secondary auth-btn-nav">Sign Up</button>
+        <button id="logout-nav" class="danger auth-btn-nav">Logout</button>
       </div>
     </div>
     
@@ -65,7 +65,7 @@
   </div>
 
   <!-- Register Form (shown when registering) -->
-  <div id="register-container" style="display: none;">
+  <div id="register-container" class="hidden-form">
     <h2>Register as Business Owner</h2>
     <form id="register-form">
       <label for="register-name">Full Name:</label>
@@ -89,7 +89,7 @@
   </div>
 
   <!-- Main Dashboard (shown when logged in) -->
-  <div id="dashboard" style="display: none;">
+  <div id="dashboard" class="hidden-form">
   <h2>Business Statistics</h2>
   <div class="stats-grid" id="stats-grid">
     <div class="stat-card">
@@ -116,8 +116,8 @@
 
   <hr>
 
-  <div style="max-width: 600px; margin: 0 auto;">
-    <h2 style="text-align: center;">Add New Business</h2>
+  <div class="form-container">
+    <h2 class="text-center">Add New Business</h2>
     <label for="business-name">Business Name:</label>
     <input type="text" id="business-name" placeholder="Enter business name">
 
@@ -145,10 +145,13 @@
     <label for="business-address">Address:</label>
     <input type="text" id="business-address" placeholder="Business address">
 
+    <label for="business-images">Upload Images:</label>
+    <input type="file" id="business-images" accept="image/*" multiple>
+
     <label for="business-rating">Rating (0-5):</label>
     <input type="number" id="business-rating" placeholder="0-5" min="0" max="5" step="0.1">
 
-    <button id="btn-add-business" class="success" style="width: 100%;">Add Business</button>
+    <button id="btn-add-business" class="success btn-full-width">Add Business</button>
   </div>
   </div>
 
