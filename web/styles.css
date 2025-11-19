@@ -1244,3 +1244,22 @@ button:disabled {
     flex: 0 0 45%;
   }
 }
+
+/* Utilities to replace inline styles used in templates */
+.site-logo-main {
+  max-width: 200px;
+  height: auto;
+  display: block;
+  margin-bottom: 20px;
+}
+
+.site-logo-footer {
+  max-width: 120px;
+  height: auto;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.user-status {
+  margin-bottom: 12px;
+}
